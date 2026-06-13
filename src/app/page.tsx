@@ -7,9 +7,9 @@ import {
   Schedule,
   Booking,
   getSchedules,
-  saveSchedules,
+  saveSchedule,
   getBookings,
-  saveBookings,
+  addBooking,
   addAuditLog
 } from '../services/database';
 import { calculateShortestPath, generateOfflineSignature } from '../services/algorithms';
@@ -22,21 +22,23 @@ export default function CommuterPortal() {
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
   
-  // Passenger Form
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [momoProvider, setMomoProvider] = useState<'MTN' | 'Telecel' | 'AT'>('MTN');
   
-  // States
   const [showCheckout, setShowCheckout] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUSSDModal, setShowUSSDModal] = useState(false);
   const [pinCode, setPinCode] = useState('');
   const [activeTicket, setActiveTicket] = useState<Booking | null>(null);
 
+  const loadData = async () => {
+    const data = await getSchedules();
+    setSchedules(data);
+  };
+
   useEffect(() => {
-    // Load schedules from storage
-    setSchedules(getSchedules());
+    loadData();
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -46,7 +48,6 @@ export default function CommuterPortal() {
       return;
     }
     
-    // Calculate Dijkstra path
     const result = calculateShortestPath(origin, destination);
     setShortestPathResult(result);
     setSelectedSchedule(null);
@@ -70,7 +71,7 @@ export default function CommuterPortal() {
     setShowUSSDModal(true);
   };
 
-  const processPayment = () => {
+  const processPayment = async () => {
     if (pinCode.length < 4) {
       alert('Please enter a valid PIN.');
       return;
@@ -79,85 +80,67 @@ export default function CommuterPortal() {
     setShowUSSDModal(false);
     setIsProcessing(true);
 
-    setTimeout(() => {
-      if (!selectedSchedule || selectedSeat === null) return;
-      
-      const ticketId = `TKT-${Date.now().toString().slice(-6)}-GH`;
-      const amount = selectedSchedule.routeId === 'rt-acc-kum' ? 120 : selectedSchedule.routeId === 'rt-acc-tam' ? 240 : 100;
-      
-      // Generate Cryptographic Offline signature
-      const signature = generateOfflineSignature(
-        ticketId,
-        name,
-        selectedSeat,
-        selectedSchedule.busNumber
-      );
-      const qrPayload = JSON.stringify({
-        ticketId,
-        passengerName: name,
-        seatNumber: selectedSeat,
-        busNumber: selectedSchedule.busNumber,
-        signature
-      });
+    if (!selectedSchedule || selectedSeat === null) return;
+    
+    const ticketId = `TKT-${Date.now().toString().slice(-6)}-GH`;
+    const amount = selectedSchedule.routeId === 'rt-acc-kum' ? 120 : selectedSchedule.routeId === 'rt-acc-tam' ? 240 : 100;
+    
+    const signature = generateOfflineSignature(
+      ticketId,
+      name,
+      selectedSeat,
+      selectedSchedule.busNumber
+    );
+    const qrPayload = JSON.stringify({
+      ticketId,
+      passengerName: name,
+      seatNumber: selectedSeat,
+      busNumber: selectedSchedule.busNumber,
+      signature
+    });
 
-      const newBooking: Booking = {
-        id: ticketId,
-        scheduleId: selectedSchedule.id,
-        passengerName: name,
-        passengerPhone: phone,
-        seatNumber: selectedSeat,
-        momoProvider,
-        momoTransactionId: `MOM-${Math.floor(100000 + Math.random() * 900000)}`,
-        amountPaid: amount,
-        timestamp: new Date().toISOString(),
-        qrPayload,
-        isValidated: false
-      };
+    const newBooking: Booking = {
+      id: ticketId,
+      scheduleId: selectedSchedule.id,
+      passengerName: name,
+      passengerPhone: phone,
+      seatNumber: selectedSeat,
+      momoProvider,
+      momoTransactionId: `MOM-${Math.floor(100000 + Math.random() * 900000)}`,
+      amountPaid: amount,
+      timestamp: new Date().toISOString(),
+      qrPayload,
+      isValidated: false
+    };
 
-      // Save to database
-      const bookings = getBookings();
-      bookings.push(newBooking);
-      saveBookings(bookings);
+    const updatedSchedule: Schedule = {
+      ...selectedSchedule,
+      reservedSeats: [...selectedSchedule.reservedSeats, selectedSeat]
+    };
+    
+    await addBooking(newBooking);
+    await saveSchedule(updatedSchedule);
+    await addAuditLog(
+      'passenger',
+      'ticket_booking',
+      `Passenger ${name} booked Seat ${selectedSeat} on Bus ${selectedSchedule.busNumber}. Amount paid: GHS ${amount} via ${momoProvider}.`
+    );
 
-      // Lock seat in schedule
-      const updatedSchedules = schedules.map(s => {
-        if (s.id === selectedSchedule.id) {
-          return {
-            ...s,
-            reservedSeats: [...s.reservedSeats, selectedSeat]
-          };
-        }
-        return s;
-      });
-      setSchedules(updatedSchedules);
-      saveSchedules(updatedSchedules);
-
-      // Log transaction in Audit
-      addAuditLog(
-        'passenger',
-        'ticket_booking',
-        `Passenger ${name} booked Seat ${selectedSeat} on Bus ${selectedSchedule.busNumber}. Amount paid: GHS ${amount} via ${momoProvider}.`
-      );
-
-      setActiveTicket(newBooking);
-      setIsProcessing(false);
-      setShowCheckout(false);
-    }, 2000);
+    setActiveTicket(newBooking);
+    await loadData();
+    
+    setIsProcessing(false);
+    setShowCheckout(false);
   };
 
-  // Filter schedules to match search origin/destination
   const getFilteredSchedules = () => {
     if (!shortestPathResult || shortestPathResult.path.length === 0) return [];
     
-    // Map graph nodes to database route IDs
-    // Standard Accra-Kumasi, Accra-Tamale, Accra-Takoradi routes
-    const routeCode = `${origin.toLowerCase()}-${destination.toLowerCase()}`;
     let matchRouteId = '';
     if (origin === 'Acc' && destination === 'Kum') matchRouteId = 'rt-acc-kum';
     if (origin === 'Acc' && destination === 'Tam') matchRouteId = 'rt-acc-tam';
     if (origin === 'Acc' && destination === 'Tak') matchRouteId = 'rt-acc-tak';
     
-    // Fallback search route matching
     return schedules.filter(s => s.routeId === matchRouteId || matchRouteId === '');
   };
 
@@ -168,7 +151,6 @@ export default function CommuterPortal() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
       
-      {/* Title Header */}
       <section style={{ textAlign: 'center', padding: '24px 0' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '8px', background: 'linear-gradient(135deg, #f3f4f6 0%, var(--text-muted) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           Avoid The Terminal Queue
@@ -178,7 +160,6 @@ export default function CommuterPortal() {
         </p>
       </section>
 
-      {/* Query Search Area */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 2fr)', gap: '24px', alignItems: 'start' }}>
         
         <section className="glass-panel" style={{ padding: '24px' }}>
@@ -223,7 +204,6 @@ export default function CommuterPortal() {
           )}
         </section>
 
-        {/* Schedules Result List */}
         <section>
           {shortestPathResult ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -291,7 +271,6 @@ export default function CommuterPortal() {
 
       </div>
 
-      {/* Seat Selection Panel */}
       {selectedSchedule && !activeTicket && (
         <section className="glass-panel" style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
           <div>
@@ -346,7 +325,6 @@ export default function CommuterPortal() {
             </div>
           </div>
 
-          {/* Checkout Info */}
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Reservation Summary</h3>
             <p style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '16px' }}>
@@ -383,7 +361,6 @@ export default function CommuterPortal() {
         </section>
       )}
 
-      {/* USSD Prompt Overlay Simulator */}
       {showUSSDModal && selectedSchedule && (
         <div style={{
           position: 'fixed',
@@ -424,7 +401,6 @@ export default function CommuterPortal() {
         </div>
       )}
 
-      {/* Payment Processing Spinner */}
       {isProcessing && (
         <div style={{
           position: 'fixed',
@@ -458,7 +434,6 @@ export default function CommuterPortal() {
         </div>
       )}
 
-      {/* Cryptographic QR Ticket Display */}
       {activeTicket && selectedSchedule && (
         <section className="glass-panel" style={{ padding: '32px', maxWidth: '500px', margin: '0 auto', textAlign: 'center', border: '1px solid var(--border-glass-active)' }}>
           <span className="badge badge-success" style={{ marginBottom: '16px' }}>
@@ -467,10 +442,8 @@ export default function CommuterPortal() {
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '20px' }}>Your Digital Ticket</h2>
 
           <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', display: 'inline-block', marginBottom: '24px' }}>
-            {/* High contrast scannable region */}
             <div style={{ border: '2px dashed #000', padding: '16px', background: '#fff' }}>
               <div style={{ width: '180px', height: '180px', background: '#000', margin: '0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#fff', padding: '12px' }}>
-                {/* Mock QR Code Pattern Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', width: '100%', height: '100%' }}>
                   <div style={{ background: '#fff' }} />
                   <div style={{ background: '#000' }} />

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getBookings, saveBookings, addAuditLog, Booking } from '../../services/database';
+import { getBookings, validateBooking, addAuditLog, Booking } from '../../services/database';
 import { verifyOfflineTicket, QRData } from '../../services/algorithms';
 
 export default function GateValidationPortal() {
@@ -13,13 +13,16 @@ export default function GateValidationPortal() {
   } | null>(null);
   const [offlineValidatedList, setOfflineValidatedList] = useState<Booking[]>([]);
 
+  const loadValidated = async () => {
+    const list = await getBookings();
+    setOfflineValidatedList(list.filter(b => b.isValidated));
+  };
+
   useEffect(() => {
-    // Load already validated tickets
-    const validated = getBookings().filter(b => b.isValidated);
-    setOfflineValidatedList(validated);
+    loadValidated();
   }, []);
 
-  const handleValidate = (e: React.FormEvent) => {
+  const handleValidate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticketInput.trim()) {
       alert('Please paste or scan a ticket code.');
@@ -28,13 +31,10 @@ export default function GateValidationPortal() {
 
     try {
       const qrData: QRData = JSON.parse(ticketInput);
-      
-      // RUN CRYPTOGRAPHIC OFFLINE VERIFICATION ALGORITHM
       const isSignatureValid = verifyOfflineTicket(qrData);
 
       if (isSignatureValid) {
-        // Find ticket in local database and mark validated
-        const bookings = getBookings();
+        const bookings = await getBookings();
         const ticketIdx = bookings.findIndex(b => b.id === qrData.ticketId);
 
         let systemMessage = 'Validated Offline: Cryptographic signature verified successfully.';
@@ -46,7 +46,7 @@ export default function GateValidationPortal() {
               message: `Ticket already verified at ${bookings[ticketIdx].validatedAt}. Warning: Duplicate scan attempt detected.`,
               ticketDetails: qrData
             });
-            addAuditLog(
+            await addAuditLog(
               'system',
               'security_duplicate_scan',
               `Warning: Duplicate offline scan attempt detected for Ticket ID ${qrData.ticketId}.`
@@ -54,14 +54,10 @@ export default function GateValidationPortal() {
             return;
           }
 
-          bookings[ticketIdx].isValidated = true;
-          bookings[ticketIdx].validatedAt = new Date().toLocaleTimeString();
-          saveBookings(bookings);
-          setOfflineValidatedList(bookings.filter(b => b.isValidated));
+          const validatedTimeString = new Date().toLocaleTimeString();
+          await validateBooking(qrData.ticketId, validatedTimeString);
           systemMessage = `Validated Offline: Successfully checked in ${qrData.passengerName} to Seat ${qrData.seatNumber}.`;
         } else {
-          // If ticket was generated offline (e.g. peer to peer) and database doesn't have it yet,
-          // it still passes validation because the signature matches! This illustrates pure offline survival.
           systemMessage = `Validated Offline: Signature matches cryptographic secret keys. Passenger verified (un-synced database log created).`;
         }
 
@@ -71,11 +67,12 @@ export default function GateValidationPortal() {
           ticketDetails: qrData
         });
 
-        addAuditLog(
+        await addAuditLog(
           'operator',
           'ticket_verification_offline',
           `Gate validated Ticket ID ${qrData.ticketId} offline. Passenger: ${qrData.passengerName}, Seat: ${qrData.seatNumber}.`
         );
+        await loadValidated();
 
       } else {
         setValidationResult({
@@ -84,7 +81,7 @@ export default function GateValidationPortal() {
           ticketDetails: qrData
         });
 
-        addAuditLog(
+        await addAuditLog(
           'system',
           'security_signature_mismatch',
           `Security Alert: Ticket signature mismatch detected on validation input: ${ticketInput.slice(0, 100)}...`
@@ -103,14 +100,13 @@ export default function GateValidationPortal() {
     setValidationResult(null);
   };
 
-  // Pre-load a valid simulated ticket to make testing extremely easy for the user
   const loadSimulatedTicket = () => {
     const validMockTicket = {
       ticketId: "TKT-3829-GH",
       passengerName: "Kofi Mensah",
       seatNumber: 14,
       busNumber: "VIP-843-26",
-      signature: "1B3F9A7D" // Correctly signed payload based on algorithm
+      signature: "1B3F9A7D"
     };
     setTicketInput(JSON.stringify(validMockTicket, null, 2));
   };
@@ -129,7 +125,6 @@ export default function GateValidationPortal() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
         
-        {/* Verification Input Panel */}
         <section className="glass-panel" style={{ padding: '24px' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Scan Input</h2>
           
@@ -203,7 +198,6 @@ export default function GateValidationPortal() {
           )}
         </section>
 
-        {/* Offline Validation Logs */}
         <section className="glass-panel" style={{ padding: '24px' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Offline Validation Log</h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAuditLogs, getBookings, getSchedules, AuditLog } from '../../services/database';
+import { getAuditLogs, getBookings, AuditLog } from '../../services/database';
 
 export default function RegulatorPortal() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -10,20 +10,23 @@ export default function RegulatorPortal() {
   const [validatedCount, setValidatedCount] = useState(0);
   const [incidentCount, setIncidentCount] = useState(0);
 
-  useEffect(() => {
-    const auditLogs = getAuditLogs();
-    setLogs(auditLogs.reverse()); // Show newest first
+  const loadData = async () => {
+    const auditLogs = await getAuditLogs();
+    setLogs([...auditLogs].reverse());
 
-    const allBookings = getBookings();
+    const allBookings = await getBookings();
     setBookingsCount(allBookings.length);
     setRevenueSum(allBookings.reduce((sum, b) => sum + b.amountPaid, 0));
     setValidatedCount(allBookings.filter(b => b.isValidated).length);
     
-    // Count safety warning/incident logs
     const incidents = auditLogs.filter(
       l => l.action.includes('security') || l.action.includes('mismatch') || l.action.includes('duplicate')
     ).length;
     setIncidentCount(incidents);
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   return (
@@ -38,7 +41,6 @@ export default function RegulatorPortal() {
         </p>
       </section>
 
-      {/* Operational Summary Widgets */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         
         <div className="glass-panel" style={{ padding: '20px' }}>
@@ -73,7 +75,6 @@ export default function RegulatorPortal() {
 
       </div>
 
-      {/* Audit Logs Ledger */}
       <section className="glass-panel" style={{ padding: '24px' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Independent Monitoring Ledger</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>

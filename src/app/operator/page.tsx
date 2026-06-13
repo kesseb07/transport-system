@@ -5,9 +5,9 @@ import {
   Schedule,
   Booking,
   getSchedules,
-  saveSchedules,
+  saveSchedule,
   getBookings,
-  saveBookings,
+  addBooking,
   addAuditLog,
   OPERATORS
 } from '../../services/database';
@@ -16,12 +16,18 @@ import { runLeakyBucketSimulation } from '../../services/algorithms';
 export default function OperatorPanel() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>('');
-  const [velocity, setVelocity] = useState<number>(30); // 30 bookings per hour baseline
+  const [velocity, setVelocity] = useState<number>(30);
   const [bookings, setBookings] = useState<Booking[]>([]);
 
+  const loadData = async () => {
+    const schs = await getSchedules();
+    const bks = await getBookings();
+    setSchedules(schs);
+    setBookings(bks);
+  };
+
   useEffect(() => {
-    setSchedules(getSchedules());
-    setBookings(getBookings());
+    loadData();
   }, []);
 
   const handleVelocityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,20 +37,17 @@ export default function OperatorPanel() {
   const currentSchedule = schedules.find(s => s.id === selectedScheduleId);
   const matchedBookings = bookings.filter(b => b.scheduleId === selectedScheduleId);
 
-  // Run Leaky Bucket calculation
   const leakyBucketData = currentSchedule 
     ? runLeakyBucketSimulation(currentSchedule, velocity)
     : null;
 
-  // Simulate bookings to fill bucket (simulate passenger accumulation)
-  const addSimulatedBooking = () => {
+  const addSimulatedBooking = async () => {
     if (!currentSchedule) return;
     if (currentSchedule.reservedSeats.length >= currentSchedule.totalSeats) {
       alert('Bus is completely full.');
       return;
     }
 
-    // Find first available seat number
     let seatNum = 1;
     while (currentSchedule.reservedSeats.includes(seatNum)) {
       seatNum++;
@@ -54,7 +57,6 @@ export default function OperatorPanel() {
     const mockMomoId = `SIM-MOM-${Math.floor(100000 + Math.random() * 900000)}`;
     const fare = currentSchedule.routeId === 'rt-acc-kum' ? 120 : currentSchedule.routeId === 'rt-acc-tam' ? 240 : 100;
     
-    // Generate signature payload
     const mockSignature = 'SIMULATED-OFFLINE-SIGNATURE';
     const qrPayload = JSON.stringify({
       ticketId: tktId,
@@ -78,64 +80,47 @@ export default function OperatorPanel() {
       isValidated: false
     };
 
-    // Update schedules
-    const updatedSchedules = schedules.map(s => {
-      if (s.id === currentSchedule.id) {
-        const updatedSeats = [...s.reservedSeats, seatNum];
-        // Auto-leak/dispatch check
-        let updatedStatus = s.status;
-        if (updatedSeats.length >= Math.floor(s.totalSeats * 0.85)) {
-          updatedStatus = 'boarding';
-        }
-        return {
-          ...s,
-          reservedSeats: updatedSeats,
-          status: updatedStatus
-        };
-      }
-      return s;
-    });
+    const updatedSeats = [...currentSchedule.reservedSeats, seatNum];
+    let updatedStatus = currentSchedule.status;
+    if (updatedSeats.length >= Math.floor(currentSchedule.totalSeats * 0.85)) {
+      updatedStatus = 'boarding';
+    }
 
-    setSchedules(updatedSchedules);
-    saveSchedules(updatedSchedules);
+    const updatedSchedule: Schedule = {
+      ...currentSchedule,
+      reservedSeats: updatedSeats,
+      status: updatedStatus
+    };
 
-    // Save bookings
-    const updatedBookings = [...bookings, newBooking];
-    setBookings(updatedBookings);
-    saveBookings(updatedBookings);
-
-    // Add audit log
-    addAuditLog(
+    await addBooking(newBooking);
+    await saveSchedule(updatedSchedule);
+    await addAuditLog(
       'system',
       'simulated_booking',
-      `Accumulated simulated booking on Schedule ${currentSchedule.id}. Bucket level is now ${currentSchedule.reservedSeats.length + 1}/${currentSchedule.totalSeats}.`
+      `Accumulated simulated booking on Schedule ${currentSchedule.id}. Bucket level is now ${updatedSeats.length}/${currentSchedule.totalSeats}.`
     );
+
+    await loadData();
   };
 
-  const triggerDispatch = () => {
+  const triggerDispatch = async () => {
     if (!currentSchedule) return;
 
-    const updatedSchedules = schedules.map(s => {
-      if (s.id === currentSchedule.id) {
-        return {
-          ...s,
-          status: 'departed' as const
-        };
-      }
-      return s;
-    });
+    const updatedSchedule: Schedule = {
+      ...currentSchedule,
+      status: 'departed'
+    };
 
-    setSchedules(updatedSchedules);
-    saveSchedules(updatedSchedules);
-
-    addAuditLog(
+    await saveSchedule(updatedSchedule);
+    await addAuditLog(
       'operator',
       'bus_dispatch',
       `Operator triggered manual dispatch for Bus ${currentSchedule.busNumber}. Congestion resolved for route.`
     );
+
+    await loadData();
   };
 
-  // Financial calculations
   const totalRevenue = matchedBookings.reduce((sum, b) => sum + b.amountPaid, 0);
 
   return (
@@ -152,7 +137,6 @@ export default function OperatorPanel() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 2fr)', gap: '24px', alignItems: 'start' }}>
         
-        {/* Fleet Selection List */}
         <section className="glass-panel" style={{ padding: '24px' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Select Active Fleet Route</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -192,11 +176,9 @@ export default function OperatorPanel() {
           </div>
         </section>
 
-        {/* Dispatch Metrics Dashboard */}
         {currentSchedule && leakyBucketData ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            {/* Leaky Bucket Simulation Visualizer */}
             <section className="glass-panel" style={{ padding: '24px' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>
                 Algorithmic Queue Status: Leaky Bucket Metrics
@@ -229,7 +211,6 @@ export default function OperatorPanel() {
                 </div>
               </div>
 
-              {/* Accumulation Velocity Simulator */}
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
                   Simulated Passenger Arrival Rate (Velocity slider):
@@ -249,7 +230,6 @@ export default function OperatorPanel() {
                 </div>
               </div>
 
-              {/* Bucket Filling Visual Level */}
               <div style={{ marginBottom: '24px' }}>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <span>Passenger Accumulation Bucket Level:</span>
@@ -268,7 +248,6 @@ export default function OperatorPanel() {
                 </p>
               </div>
 
-              {/* Control Buttons */}
               <div style={{ display: 'flex', gap: '16px' }}>
                 <button onClick={addSimulatedBooking} className="btn-secondary" style={{ flex: 1 }}>
                   Simulate Ticketing (Fill Bucket)
@@ -284,7 +263,6 @@ export default function OperatorPanel() {
               </div>
             </section>
 
-            {/* Passenger Manifest and Financial Reconciliation */}
             <section className="glass-panel" style={{ padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Passenger Manifest</h2>
