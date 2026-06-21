@@ -368,6 +368,16 @@ export default function CommuterPortal() {
 
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Reservation Summary</h3>
+            
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+               <p style={{ fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: '6px' }}>
+                 <strong style={{ color: 'var(--text-muted)' }}>Operator:</strong> {OPERATORS.find(o => o.id === selectedSchedule.operatorId)?.name}
+               </p>
+               <p style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>
+                 <strong style={{ color: 'var(--text-muted)' }}>Seats Booked:</strong> {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}
+               </p>
+            </div>
+
             <p style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '16px' }}>
               Fare: GHS {(selectedSchedule.routeId === 'rt-acc-kum' ? 120 : selectedSchedule.routeId === 'rt-acc-tam' ? 240 : 100) * Math.max(1, selectedSeats.length)}.00
             </p>

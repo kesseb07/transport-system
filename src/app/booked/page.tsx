@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getBookings, getSchedules, ROUTES, Booking, Schedule } from '../../services/database';
+import { getBookings, getSchedules, ROUTES, OPERATORS, Booking, Schedule } from '../../services/database';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -100,6 +100,10 @@ function TicketContent() {
     return ROUTES.find(r => r.id === routeId) || { origin: 'Unknown', destination: 'Unknown' };
   };
 
+  const getOperatorDetails = (operatorId: string) => {
+    return OPERATORS.find(o => o.id === operatorId) || { name: 'Unknown', color: '#666' };
+  };
+
   return (
     <section className="glass-panel" style={{ padding: '32px', maxWidth: '1000px', margin: '32px auto', textAlign: 'center', border: '1px solid var(--border-glass-active)' }}>
       <span className="badge badge-success" style={{ marginBottom: '16px' }}>
@@ -110,12 +114,20 @@ function TicketContent() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginBottom: '24px' }}>
         {tickets.map(ticket => {
           const route = getRouteDetails(schedule.routeId);
+          const operator = getOperatorDetails(schedule.operatorId);
           return (
-            <div key={ticket.id} id={`ticket-${ticket.id}`} style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-glass)', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+            <div key={ticket.id} id={`ticket-${ticket.id}`} style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-glass)', borderTop: `4px solid ${operator.color}`, textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
               
-              <div style={{ borderBottom: '2px dashed rgba(255,255,255,0.2)', paddingBottom: '16px', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '1.3rem', color: 'var(--accent-gold)', margin: '0 0 4px 0', fontWeight: 800, letterSpacing: '1px' }}>BOARDING PASS</h3>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>Ticket ID: {ticket.id}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px dashed rgba(255,255,255,0.2)', paddingBottom: '16px', marginBottom: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.3rem', color: 'var(--accent-gold)', margin: '0 0 4px 0', fontWeight: 800, letterSpacing: '1px' }}>BOARDING PASS</h3>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>Ticket ID: {ticket.id}</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ background: operator.color, color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    {operator.name}
+                  </span>
+                </div>
               </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
@@ -136,7 +148,7 @@ function TicketContent() {
                     <p style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>{ticket.passengerName}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Seat</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Seat Number</p>
                     <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>{ticket.seatNumber}</p>
                   </div>
                 </div>
