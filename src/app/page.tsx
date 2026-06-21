@@ -12,8 +12,10 @@ import {
   addAuditLog
 } from '../services/database';
 import { calculateShortestPath, generateOfflineSignature } from '../services/algorithms';
+import { useRouter } from 'next/navigation';
 
 export default function CommuterPortal() {
+  const router = useRouter();
   const [origin, setOrigin] = useState('Acc');
   const [destination, setDestination] = useState('Kum');
   const [operatorFilter, setOperatorFilter] = useState('All');
@@ -34,7 +36,6 @@ export default function CommuterPortal() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUSSDModal, setShowUSSDModal] = useState(false);
   const [pinCode, setPinCode] = useState('');
-  const [activeTickets, setActiveTickets] = useState<Booking[]>([]);
 
   const loadData = async () => {
     const data = await getSchedules();
@@ -136,10 +137,11 @@ export default function CommuterPortal() {
       `Passenger ${name} booked Seats [${selectedSeats.join(', ')}] on Bus ${selectedSchedule.busNumber}. Amount paid: GHS ${totalAmount} via ${momoProvider}.`
     );
 
-    setActiveTickets(generatedTickets);
     await loadData();
-    
     setIsProcessing(false);
+    
+    const ticketIds = generatedTickets.map(t => t.id).join(',');
+    router.push(`/booked?tickets=${ticketIds}`);
   };
 
   const getFilteredSchedules = () => {
@@ -287,7 +289,6 @@ export default function CommuterPortal() {
                         onClick={() => {
                           setSelectedSchedule(sch);
                           setSelectedSeats([]);
-                          setActiveTickets([]);
                         }} 
                         className="btn-secondary"
                       >
@@ -311,7 +312,7 @@ export default function CommuterPortal() {
 
       </div>
 
-      {selectedSchedule && activeTickets.length === 0 && (
+      {selectedSchedule && (
         <section className="glass-panel" style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Select Seat: Bus {selectedSchedule.busNumber}</h2>
@@ -479,53 +480,7 @@ export default function CommuterPortal() {
         </div>
       )}
 
-      {activeTickets.length > 0 && selectedSchedule && (
-        <section className="glass-panel" style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', textAlign: 'center', border: '1px solid var(--border-glass-active)' }}>
-          <span className="badge badge-success" style={{ marginBottom: '16px' }}>
-            Reservation Confirmed
-          </span>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '20px' }}>Your Digital Tickets</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-            {activeTickets.map(ticket => (
-              <div key={ticket.id} style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-glass)', textAlign: 'left' }}>
-                <div style={{ background: '#fff', padding: '16px', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
-                  <div style={{ border: '2px dashed #000', padding: '8px', background: '#fff' }}>
-                    <div style={{ width: '120px', height: '120px', background: '#000', margin: '0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#fff', padding: '8px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', width: '100%', height: '100%' }}>
-                        <div style={{ background: '#fff' }} />
-                        <div style={{ background: '#000' }} />
-                        <div style={{ background: '#fff' }} />
-                        <div style={{ background: '#000' }} />
-                        <div style={{ background: '#fff' }} />
-                        <div style={{ background: '#000' }} />
-                        <div style={{ background: '#fff' }} />
-                        <div style={{ background: '#000' }} />
-                        <div style={{ background: '#fff' }} />
-                      </div>
-                    </div>
-                    <p style={{ color: '#000', fontSize: '0.55rem', fontFamily: 'monospace', marginTop: '8px', wordBreak: 'break-all' }}>
-                      SIG: {JSON.parse(ticket.qrPayload).signature}
-                    </p>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <p style={{ fontSize: '0.85rem' }}><span style={{ color: 'var(--text-muted)' }}>Ticket ID:</span> {ticket.id}</p>
-                  <p style={{ fontSize: '0.85rem' }}><span style={{ color: 'var(--text-muted)' }}>Passenger:</span> {ticket.passengerName}</p>
-                  <p style={{ fontSize: '0.85rem' }}><span style={{ color: 'var(--text-muted)' }}>Bus:</span> {selectedSchedule.busNumber}</p>
-                  <p style={{ fontSize: '0.85rem' }}><span style={{ color: 'var(--text-muted)' }}>Seat:</span> {ticket.seatNumber}</p>
-                  <p style={{ fontSize: '0.85rem' }}><span style={{ color: 'var(--text-muted)' }}>Time:</span> {selectedSchedule.scheduledTime}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button onClick={() => setActiveTickets([])} className="btn-secondary" style={{ width: '100%', maxWidth: '300px' }}>
-            Book Another Journey
-          </button>
-        </section>
-      )}
 
     </div>
   );
