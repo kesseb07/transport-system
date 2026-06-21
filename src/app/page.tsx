@@ -77,10 +77,6 @@ export default function CommuterPortal() {
   };
 
   const processPayment = async () => {
-    if (pinCode.length < 4) {
-      alert('Please enter a valid PIN.');
-      return;
-    }
     
     setShowUSSDModal(false);
     setIsProcessing(true);
@@ -422,26 +418,28 @@ export default function CommuterPortal() {
           zIndex: 1000
         }}>
           <div className="glass-panel" style={{ padding: '32px', width: '90%', maxWidth: '400px', textAlign: 'center', border: '1px solid var(--accent-gold)' }}>
-            <span className="badge badge-momo" style={{ marginBottom: '16px' }}>
-              {momoProvider} Payment Request
-            </span>
-            <p style={{ margin: '16px 0', fontSize: '1rem', color: 'var(--text-main)' }}>
-              Authorize payment of GHS {(selectedSchedule.routeId === 'rt-acc-kum' ? 120 : selectedSchedule.routeId === 'rt-acc-tam' ? 240 : 100) * Math.max(1, selectedSeats.length)}.00 to AccraTransit?
-            </p>
-            <input 
-              type="password" 
-              maxLength={4}
-              placeholder="Enter 4-Digit Mobile Money PIN" 
-              value={pinCode}
-              onChange={(e) => setPinCode(e.target.value)}
-              style={{ textAlign: 'center', letterSpacing: '12px', fontSize: '1.25rem', width: '100%', marginBottom: '24px' }}
-            />
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <button onClick={() => setShowUSSDModal(false)} className="btn-secondary" style={{ flex: 1 }}>
-                Cancel
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                border: '4px solid rgba(139, 92, 246, 0.1)',
+                borderTopColor: 'var(--primary)',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 16px auto'
+              }} />
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>Waiting for Authorization</h3>
+              <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>
+                A payment prompt has been sent to <strong>{phone}</strong> via {momoProvider}. Please check your phone and authorize the payment of <strong>GHS {(selectedSchedule.routeId === 'rt-acc-kum' ? 120 : selectedSchedule.routeId === 'rt-acc-tam' ? 240 : 100) * Math.max(1, selectedSeats.length)}.00</strong> to AccraTransit.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button onClick={processPayment} className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.2)' }}>
+                I have completed the payment
               </button>
-              <button onClick={processPayment} className="btn-primary" style={{ flex: 1, background: 'linear-gradient(135deg, var(--accent-gold) 0%, #d97706 100%)', boxShadow: '0 4px 14px 0 rgba(251, 191, 36, 0.2)' }}>
-                Confirm Pay
+              <button onClick={() => setShowUSSDModal(false)} className="btn-secondary" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-muted)' }}>
+                Cancel Payment
               </button>
             </div>
           </div>
