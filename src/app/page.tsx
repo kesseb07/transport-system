@@ -171,7 +171,7 @@ export default function CommuterPortal() {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
       
       <section style={{ textAlign: 'center', padding: '24px 0' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '8px', background: 'linear-gradient(135deg, #f3f4f6 0%, var(--text-muted) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 className="header-title" style={{ fontWeight: 800, marginBottom: '8px', background: 'linear-gradient(135deg, #f3f4f6 0%, var(--text-muted) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           Avoid The Terminal Queue
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>
@@ -179,7 +179,7 @@ export default function CommuterPortal() {
         </p>
       </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 2fr)', gap: '24px', alignItems: 'start' }}>
+      <div className="main-grid">
         
         <section className="glass-panel" style={{ padding: '24px' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Find Your Bus Route</h2>
@@ -313,10 +313,10 @@ export default function CommuterPortal() {
       </div>
 
       {selectedSchedule && (
-        <section className="glass-panel" style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+        <section className="glass-panel reservation-grid" style={{ padding: '24px' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Select Seat: Bus {selectedSchedule.busNumber}</h2>
-            <div style={{ 
+            <div className="seat-grid" style={{ 
               display: 'grid', 
               gridTemplateColumns: 'repeat(4, 1fr)', 
               gap: '12px', 

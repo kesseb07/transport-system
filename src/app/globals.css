@@ -175,3 +175,40 @@ input:focus, select:focus {
 .pulse {
   animation: pulse-slow 2s infinite ease-in-out;
 }
+
+/* Responsive utilities */
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(300px, 2fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.reservation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.header-title {
+  font-size: 2.5rem;
+}
+
+@media (max-width: 768px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .reservation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header-title {
+    font-size: 1.8rem;
+  }
+  
+  .seat-grid {
+    gap: 8px !important;
+    padding: 16px !important;
+  }
+}
