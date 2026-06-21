@@ -156,7 +156,7 @@ export const runLeakyBucketSimulation = (
 
 // 3. Cryptographic Offline QR Ticket Signature System
 // Generates a tamper-proof verification signature that can be verified completely offline
-const MOCK_SECRET_KEY = 'AccraTransitSecretKey2026';
+const MOCK_SECRET_KEY = 'GhanaTBSSecretKey2026';
 
 export interface QRData {
   ticketId: string;

@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AccraTransit - Online Intercity Bus Booking System",
+  title: "GhanaTBS - Online Intercity Bus Booking System",
   description: "Integrated bus booking and scheduling platform for Ghana",
 };
 
@@ -29,7 +29,7 @@ export default function RootLayout({
           fontSize: '0.85rem',
           marginTop: 'auto'
         }}>
-          AccraTransit Bus Booking System Prototype. Built for academic validation under Ghana Transport Modernisation Guidelines.
+          GhanaTBS Bus Booking System Prototype. Built for academic validation under Ghana Transport Modernisation Guidelines.
         </footer>
       </body>
     </html>

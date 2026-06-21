@@ -441,7 +441,7 @@ export default function CommuterPortal() {
               }} />
               <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>Waiting for Authorization</h3>
               <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>
-                A payment prompt has been sent to <strong>{phone}</strong> via {momoProvider}. Please check your phone and authorize the payment of <strong>GHS {(selectedSchedule.routeId === 'rt-acc-kum' ? 120 : selectedSchedule.routeId === 'rt-acc-tam' ? 240 : 100) * Math.max(1, selectedSeats.length)}.00</strong> to AccraTransit.
+                A payment prompt has been sent to <strong>{phone}</strong> via {momoProvider}. Please check your phone and authorize the payment of <strong>GHS {(selectedSchedule.routeId === 'rt-acc-kum' ? 120 : selectedSchedule.routeId === 'rt-acc-tam' ? 240 : 100) * Math.max(1, selectedSeats.length)}.00</strong> to GhanaTBS.
               </p>
             </div>
 

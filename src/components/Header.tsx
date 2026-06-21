@@ -29,7 +29,7 @@ export default function Header() {
           fontSize: '1rem',
           letterSpacing: '0.05em'
         }}>
-          AccraTransit
+          GhanaTBS
         </span>
       </Link>
       
