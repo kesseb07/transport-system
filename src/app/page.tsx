@@ -17,6 +17,7 @@ import { calculateShortestPath, generateOfflineSignature } from '../services/alg
 export default function CommuterPortal() {
   const [origin, setOrigin] = useState('Acc');
   const [destination, setDestination] = useState('Kum');
+  const [operatorFilter, setOperatorFilter] = useState('All');
   const [shortestPathResult, setShortestPathResult] = useState<any>(null);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
@@ -135,13 +136,21 @@ export default function CommuterPortal() {
 
   const getFilteredSchedules = () => {
     if (!shortestPathResult || shortestPathResult.path.length === 0) return [];
-    
+
     let matchRouteId = '';
     if (origin === 'Acc' && destination === 'Kum') matchRouteId = 'rt-acc-kum';
     if (origin === 'Acc' && destination === 'Tam') matchRouteId = 'rt-acc-tam';
     if (origin === 'Acc' && destination === 'Tak') matchRouteId = 'rt-acc-tak';
-    
-    return schedules.filter(s => s.routeId === matchRouteId || matchRouteId === '');
+
+    if (!matchRouteId) return [];
+
+    let filtered = schedules.filter(s => s.routeId === matchRouteId);
+
+    if (operatorFilter !== 'All') {
+      filtered = filtered.filter(s => s.operatorId === operatorFilter);
+    }
+
+    return filtered;
   };
 
   const matchedSchedules = getFilteredSchedules();
@@ -180,6 +189,16 @@ export default function CommuterPortal() {
                 <option value="Kum">Kumasi (Kejetia)</option>
                 <option value="Tam">Tamale</option>
                 <option value="Tak">Takoradi</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Operator Type</label>
+              <select value={operatorFilter} onChange={(e) => setOperatorFilter(e.target.value)}>
+                <option value="All">All Operators</option>
+                {OPERATORS.map(op => (
+                  <option key={op.id} value={op.id}>{op.name}</option>
+                ))}
               </select>
             </div>
 
