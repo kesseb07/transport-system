@@ -8,7 +8,6 @@ import {
   Booking,
   getSchedules,
   saveSchedule,
-  getBookings,
   addBooking,
   addAuditLog
 } from '../services/database';
@@ -18,6 +17,8 @@ export default function CommuterPortal() {
   const [origin, setOrigin] = useState('Acc');
   const [destination, setDestination] = useState('Kum');
   const [operatorFilter, setOperatorFilter] = useState('All');
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [shortestPathResult, setShortestPathResult] = useState<any>(null);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
@@ -27,7 +28,6 @@ export default function CommuterPortal() {
   const [phone, setPhone] = useState('');
   const [momoProvider, setMomoProvider] = useState<'MTN' | 'Telecel' | 'AT'>('MTN');
   
-  const [showCheckout, setShowCheckout] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUSSDModal, setShowUSSDModal] = useState(false);
   const [pinCode, setPinCode] = useState('');
@@ -39,6 +39,7 @@ export default function CommuterPortal() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line
     loadData();
   }, []);
 
@@ -131,7 +132,6 @@ export default function CommuterPortal() {
     await loadData();
     
     setIsProcessing(false);
-    setShowCheckout(false);
   };
 
   const getFilteredSchedules = () => {
@@ -175,8 +175,8 @@ export default function CommuterPortal() {
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Find Your Bus Route</h2>
           <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Departing From</label>
-              <select value={origin} onChange={(e) => setOrigin(e.target.value)}>
+              <label htmlFor="origin-select" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Departing From</label>
+              <select id="origin-select" title="Select Origin" aria-label="Departing From" value={origin} onChange={(e) => setOrigin(e.target.value)}>
                 <option value="Acc">Accra (Circle)</option>
                 <option value="Kum">Kumasi (Kejetia)</option>
                 <option value="Tak">Takoradi</option>
@@ -184,8 +184,8 @@ export default function CommuterPortal() {
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Going To</label>
-              <select value={destination} onChange={(e) => setDestination(e.target.value)}>
+              <label htmlFor="destination-select" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Going To</label>
+              <select id="destination-select" title="Select Destination" aria-label="Going To" value={destination} onChange={(e) => setDestination(e.target.value)}>
                 <option value="Kum">Kumasi (Kejetia)</option>
                 <option value="Tam">Tamale</option>
                 <option value="Tak">Takoradi</option>
@@ -193,8 +193,8 @@ export default function CommuterPortal() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Operator Type</label>
-              <select value={operatorFilter} onChange={(e) => setOperatorFilter(e.target.value)}>
+              <label htmlFor="operator-select" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Operator Type</label>
+              <select id="operator-select" title="Select Operator" aria-label="Operator Type" value={operatorFilter} onChange={(e) => setOperatorFilter(e.target.value)}>
                 <option value="All">All Operators</option>
                 {OPERATORS.map(op => (
                   <option key={op.id} value={op.id}>{op.name}</option>
@@ -364,8 +364,11 @@ export default function CommuterPortal() {
                 onChange={(e) => setPhone(e.target.value)} 
               />
               <select 
+                id="momo-provider"
+                title="Select Mobile Money Provider"
+                aria-label="Select Mobile Money Provider"
                 value={momoProvider} 
-                onChange={(e) => setMomoProvider(e.target.value as any)}
+                onChange={(e) => setMomoProvider(e.target.value as 'MTN' | 'Telecel' | 'AT')}
               >
                 <option value="MTN">MTN Mobile Money</option>
                 <option value="Telecel">Telecel Cash</option>

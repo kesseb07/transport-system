@@ -96,7 +96,7 @@ export const getSchedules = async (): Promise<Schedule[]> => {
       .select('*')
       .order('scheduled_time', { ascending: true });
     
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       return data.map(item => ({
         id: item.id,
         operatorId: item.operator_id || '',
@@ -109,6 +109,25 @@ export const getSchedules = async (): Promise<Schedule[]> => {
         departureRatePerHour: item.departure_rate_per_hour,
         status: (item.status as any) || 'scheduled'
       }));
+    }
+
+    if (!error && data && data.length === 0) {
+      // Auto-seed Supabase since the table is empty
+      const seeds = seedLocalSchedules();
+      const insertData = seeds.map(s => ({
+        id: s.id,
+        operator_id: s.operatorId,
+        route_id: s.routeId,
+        bus_number: s.busNumber,
+        total_seats: s.totalSeats,
+        reserved_seats: s.reservedSeats,
+        scheduled_time: s.scheduledTime,
+        estimated_departure_time: s.estimatedDepartureTime,
+        departure_rate_per_hour: s.departureRatePerHour,
+        status: s.status
+      }));
+      await supabase.from('schedules').insert(insertData);
+      return seeds;
     }
   }
 
