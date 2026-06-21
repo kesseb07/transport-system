@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getBookings, getSchedules, Booking, Schedule } from '../../services/database';
+import { getBookings, getSchedules, ROUTES, Booking, Schedule } from '../../services/database';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -96,6 +96,10 @@ function TicketContent() {
     );
   }
 
+  const getRouteDetails = (routeId: string) => {
+    return ROUTES.find(r => r.id === routeId) || { origin: 'Unknown', destination: 'Unknown' };
+  };
+
   return (
     <section className="glass-panel" style={{ padding: '32px', maxWidth: '1000px', margin: '32px auto', textAlign: 'center', border: '1px solid var(--border-glass-active)' }}>
       <span className="badge badge-success" style={{ marginBottom: '16px' }}>
@@ -103,48 +107,74 @@ function TicketContent() {
       </span>
       <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '20px' }}>Your Digital Tickets</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-        {tickets.map(ticket => (
-          <div key={ticket.id} id={`ticket-${ticket.id}`} style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-glass)', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ background: '#fff', padding: '16px', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
-              <div style={{ border: '2px dashed #000', padding: '8px', background: '#fff' }}>
-                <div style={{ width: '120px', height: '120px', background: '#000', margin: '0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#fff', padding: '8px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px', width: '100%', height: '100%' }}>
-                    <div style={{ background: '#fff' }} />
-                    <div style={{ background: '#000' }} />
-                    <div style={{ background: '#fff' }} />
-                    <div style={{ background: '#000' }} />
-                    <div style={{ background: '#fff' }} />
-                    <div style={{ background: '#000' }} />
-                    <div style={{ background: '#fff' }} />
-                    <div style={{ background: '#000' }} />
-                    <div style={{ background: '#fff' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+        {tickets.map(ticket => {
+          const route = getRouteDetails(schedule.routeId);
+          return (
+            <div key={ticket.id} id={`ticket-${ticket.id}`} style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-glass)', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+              
+              <div style={{ borderBottom: '2px dashed rgba(255,255,255,0.2)', paddingBottom: '16px', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1.3rem', color: 'var(--accent-gold)', margin: '0 0 4px 0', fontWeight: 800, letterSpacing: '1px' }}>BOARDING PASS</h3>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>Ticket ID: {ticket.id}</p>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>From</p>
+                  <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{route.origin}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>To</p>
+                  <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{route.destination}</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Passenger Name</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>{ticket.passengerName}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Seat</p>
+                    <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>{ticket.seatNumber}</p>
                   </div>
                 </div>
-                <p style={{ color: '#000', fontSize: '0.55rem', fontFamily: 'monospace', marginTop: '8px', wordBreak: 'break-all', textAlign: 'center' }}>
-                  SIG: {JSON.parse(ticket.qrPayload).signature}
-                </p>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Departure Time</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>{schedule.scheduledTime}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Bus No.</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 600, color: '#fff', fontFamily: 'monospace' }}>{schedule.busNumber}</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '6px' }}>
+                  <div>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '2px', textTransform: 'uppercase' }}>Booked On</p>
+                    <p style={{ fontSize: '0.85rem', color: '#ccc' }}>{new Date(ticket.timestamp).toLocaleString()}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '2px', textTransform: 'uppercase' }}>Status</p>
+                    <p style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 700 }}>PAID ({ticket.momoProvider})</p>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '16px' }} data-html2canvas-ignore="true">
+                <button onClick={() => downloadImage(ticket.id)} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }}>
+                  Save PNG
+                </button>
+                <button onClick={() => downloadPDF(ticket.id)} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.05)' }}>
+                  Save PDF
+                </button>
               </div>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', flex: 1 }}>
-              <p style={{ fontSize: '0.9rem' }}><strong style={{ color: 'var(--text-muted)' }}>Ticket ID:</strong> {ticket.id}</p>
-              <p style={{ fontSize: '0.9rem' }}><strong style={{ color: 'var(--text-muted)' }}>Passenger:</strong> {ticket.passengerName}</p>
-              <p style={{ fontSize: '0.9rem' }}><strong style={{ color: 'var(--text-muted)' }}>Bus:</strong> {schedule.busNumber}</p>
-              <p style={{ fontSize: '0.9rem' }}><strong style={{ color: 'var(--text-muted)' }}>Seat:</strong> {ticket.seatNumber}</p>
-              <p style={{ fontSize: '0.9rem' }}><strong style={{ color: 'var(--text-muted)' }}>Time:</strong> {schedule.scheduledTime}</p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '16px' }} data-html2canvas-ignore="true">
-              <button onClick={() => downloadImage(ticket.id)} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }}>
-                Save PNG
-              </button>
-              <button onClick={() => downloadPDF(ticket.id)} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.05)' }}>
-                Save PDF
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <button onClick={() => router.push('/')} className="btn-secondary" style={{ width: '100%', maxWidth: '300px' }}>
