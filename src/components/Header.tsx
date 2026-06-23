@@ -30,8 +30,8 @@ export default function Header() {
     }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', zIndex: 101 }}>
         <span style={{
-          background: 'linear-gradient(135deg, var(--accent-gold) 0%, var(--primary) 100%)',
-          color: '#09090e',
+          background: 'var(--primary)',
+          color: '#ffffff',
           padding: '6px 12px',
           borderRadius: '8px',
           fontWeight: 800,
