@@ -90,7 +90,8 @@ export default function CommuterPortal() {
 
     if (!selectedSchedule || selectedSeats.length === 0) return;
     
-    const amountPerSeat = selectedSchedule.routeId === 'rt-acc-kum' ? 120 : selectedSchedule.routeId === 'rt-acc-tam' ? 240 : 100;
+    const routeDetails = ROUTES.find(r => r.id === selectedSchedule.routeId);
+    const amountPerSeat = routeDetails ? routeDetails.baseFareGhs : 100;
     const totalAmount = amountPerSeat * selectedSeats.length;
     
     const generatedTickets: Booking[] = [];
@@ -153,14 +154,15 @@ export default function CommuterPortal() {
   const getFilteredSchedules = () => {
     if (!shortestPathResult || shortestPathResult.path.length === 0) return [];
 
-    let matchRouteId = '';
-    if (origin === 'Acc' && destination === 'Kum') matchRouteId = 'rt-acc-kum';
-    if (origin === 'Acc' && destination === 'Tam') matchRouteId = 'rt-acc-tam';
-    if (origin === 'Acc' && destination === 'Tak') matchRouteId = 'rt-acc-tak';
+    const originLower = origin.toLowerCase();
+    const destLower = destination.toLowerCase();
+    const matchRouteIdForward = `rt-${originLower}-${destLower}`;
+    const matchRouteIdReverse = `rt-${destLower}-${originLower}`;
 
-    if (!matchRouteId) return [];
-
-    let filtered = schedules.filter(s => s.routeId === matchRouteId);
+    let filtered = schedules.filter(s => 
+      s.routeId === matchRouteIdForward || 
+      s.routeId === matchRouteIdReverse
+    );
 
     if (operatorFilter !== 'All') {
       filtered = filtered.filter(s => s.operatorId === operatorFilter);
@@ -196,6 +198,10 @@ export default function CommuterPortal() {
                 <option value="Acc">Accra (Circle)</option>
                 <option value="Kum">Kumasi (Kejetia)</option>
                 <option value="Tak">Takoradi</option>
+                <option value="Tam">Tamale</option>
+                <option value="Sun">Sunyani</option>
+                <option value="Ho">Ho</option>
+                <option value="Cap">Cape Coast</option>
               </select>
             </div>
             
@@ -205,6 +211,10 @@ export default function CommuterPortal() {
                 <option value="Kum">Kumasi (Kejetia)</option>
                 <option value="Tam">Tamale</option>
                 <option value="Tak">Takoradi</option>
+                <option value="Acc">Accra (Circle)</option>
+                <option value="Sun">Sunyani</option>
+                <option value="Ho">Ho</option>
+                <option value="Cap">Cape Coast</option>
               </select>
             </div>
 

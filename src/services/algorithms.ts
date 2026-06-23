@@ -21,12 +21,14 @@ export const TRANSIT_GRAPH_NODES: GraphNode[] = [
   { id: 'Tam', name: 'Tamale' },
   { id: 'Tak', name: 'Takoradi' },
   { id: 'Sun', name: 'Sunyani' },
-  { id: 'Ho', name: 'Ho' }
+  { id: 'Ho', name: 'Ho' },
+  { id: 'Cap', name: 'Cape Coast' }
 ];
 
 export const TRANSIT_GRAPH_EDGES: GraphEdge[] = [
   { from: 'Acc', to: 'Kum', distanceKm: 270, avgTimeMins: 270 }, // 4.5 hours
-  { from: 'Acc', to: 'Tak', distanceKm: 220, avgTimeMins: 240 }, // 4 hours
+  { from: 'Acc', to: 'Cap', distanceKm: 145, avgTimeMins: 150 }, // 2.5 hours
+  { from: 'Cap', to: 'Tak', distanceKm: 75, avgTimeMins: 90 },   // 1.5 hours
   { from: 'Acc', to: 'Ho', distanceKm: 160, avgTimeMins: 180 },  // 3 hours
   { from: 'Kum', to: 'Tam', distanceKm: 380, avgTimeMins: 360 }, // 6 hours
   { from: 'Kum', to: 'Sun', distanceKm: 120, avgTimeMins: 120 }, // 2 hours

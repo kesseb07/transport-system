@@ -60,7 +60,13 @@ export const OPERATORS: Operator[] = [
 export const ROUTES: Route[] = [
   { id: 'rt-acc-kum', origin: 'Accra', destination: 'Kumasi', distanceKm: 270, baseFareGhs: 120 },
   { id: 'rt-acc-tam', origin: 'Accra', destination: 'Tamale', distanceKm: 620, baseFareGhs: 240 },
-  { id: 'rt-acc-tak', origin: 'Accra', destination: 'Takoradi', distanceKm: 220, baseFareGhs: 100 }
+  { id: 'rt-acc-tak', origin: 'Accra', destination: 'Takoradi', distanceKm: 220, baseFareGhs: 100 },
+  { id: 'rt-acc-ho', origin: 'Accra', destination: 'Ho', distanceKm: 160, baseFareGhs: 80 },
+  { id: 'rt-acc-cap', origin: 'Accra', destination: 'Cape Coast', distanceKm: 145, baseFareGhs: 70 },
+  { id: 'rt-kum-tam', origin: 'Kumasi', destination: 'Tamale', distanceKm: 380, baseFareGhs: 150 },
+  { id: 'rt-kum-sun', origin: 'Kumasi', destination: 'Sunyani', distanceKm: 120, baseFareGhs: 60 },
+  { id: 'rt-sun-tam', origin: 'Sunyani', destination: 'Tamale', distanceKm: 310, baseFareGhs: 130 },
+  { id: 'rt-cap-tak', origin: 'Cape Coast', destination: 'Takoradi', distanceKm: 75, baseFareGhs: 40 }
 ];
 
 const isBrowser = typeof window !== 'undefined';
@@ -97,7 +103,12 @@ export const getSchedules = async (): Promise<Schedule[]> => {
       .order('scheduled_time', { ascending: true });
     
     if (!error && data && data.length > 0) {
-      return data.map(item => ({
+      // If we have old data without the new routes, clear it out to re-seed
+      if (data.length < 100) {
+        await supabase.from('schedules').delete().neq('id', '0'); // Delete all
+        data.length = 0; // Trigger the auto-seed below
+      } else {
+        return data.map(item => ({
         id: item.id,
         operatorId: item.operator_id || '',
         routeId: item.route_id || '',
@@ -109,6 +120,7 @@ export const getSchedules = async (): Promise<Schedule[]> => {
         departureRatePerHour: item.departure_rate_per_hour,
         status: (item.status as any) || 'scheduled'
       }));
+      }
     }
 
     if (!error && data && data.length === 0) {
@@ -132,11 +144,11 @@ export const getSchedules = async (): Promise<Schedule[]> => {
   }
 
   if (!isBrowser) return seedLocalSchedules();
-  const cached = localStorage.getItem('bus_schedules');
+  const cached = localStorage.getItem('bus_schedules_v2');
   if (cached) return JSON.parse(cached);
   
   const initial = seedLocalSchedules();
-  localStorage.setItem('bus_schedules', JSON.stringify(initial));
+  localStorage.setItem('bus_schedules_v2', JSON.stringify(initial));
   return initial;
 };
 
@@ -154,11 +166,11 @@ export const saveSchedule = async (schedule: Schedule): Promise<void> => {
   }
 
   if (isBrowser) {
-    const cached = localStorage.getItem('bus_schedules');
+    const cached = localStorage.getItem('bus_schedules_v2');
     if (cached) {
       const list: Schedule[] = JSON.parse(cached);
       const updated = list.map(s => s.id === schedule.id ? schedule : s);
-      localStorage.setItem('bus_schedules', JSON.stringify(updated));
+      localStorage.setItem('bus_schedules_v2', JSON.stringify(updated));
     }
   }
 };
