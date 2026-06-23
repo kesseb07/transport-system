@@ -36,6 +36,12 @@ export default function CommuterPortal() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUSSDModal, setShowUSSDModal] = useState(false);
   const [pinCode, setPinCode] = useState('');
+  
+  const [showAbout, setShowAbout] = useState(true);
+
+  const closeAbout = () => {
+    setShowAbout(false);
+  };
 
   const loadData = async () => {
     const data = await getSchedules();
@@ -484,6 +490,35 @@ export default function CommuterPortal() {
       )}
 
 
+      {showAbout && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(9, 9, 14, 0.8)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000,
+          padding: '24px'
+        }}>
+          <div className="glass-panel" style={{ maxWidth: '500px', padding: '32px', textAlign: 'center', background: 'var(--bg-card)' }}>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '16px' }}>Academic Research Prototype</h2>
+            <p style={{ color: 'var(--text-main)', marginBottom: '16px', lineHeight: 1.6 }}>
+              Hello, my name is Kesse. Welcome to <strong>GhanaTBS</strong>. 
+            </p>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '24px', lineHeight: 1.6, fontSize: '0.95rem' }}>
+              Please note that this application is a <strong> Transport Booking System</strong> built as a <strong>research prototype</strong> for an academic dissertation. It explores solutions to intercity transport terminal congestion in Ghana. It is not a commercial product or a startup pitch. No real payments are processed.
+            </p>
+            <button onClick={closeAbout} className="btn-primary" style={{ width: '100%' }}>
+              I Understand
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
