@@ -58,6 +58,9 @@ export default function Header() {
         <Link href="/" className="btn-secondary" onClick={() => setIsOpen(false)} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
           Commuter Portal
         </Link>
+        <Link href="/map" className="btn-secondary" onClick={() => setIsOpen(false)} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+          Live Map
+        </Link>
         <Link href="/operator" className="btn-secondary" onClick={() => setIsOpen(false)} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
           Operator Dash
         </Link>
