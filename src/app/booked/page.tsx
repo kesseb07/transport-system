@@ -116,9 +116,9 @@ function TicketContent() {
           const route = getRouteDetails(schedule.routeId);
           const operator = getOperatorDetails(schedule.operatorId);
           return (
-            <div key={ticket.id} id={`ticket-${ticket.id}`} style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border-glass)', borderTop: `4px solid ${operator.color}`, textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+            <div key={ticket.id} id={`ticket-${ticket.id}`} className="glass-panel" style={{ padding: '24px', borderRadius: '12px', borderTop: `4px solid ${operator.color}`, textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px dashed rgba(255,255,255,0.2)', paddingBottom: '16px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px dashed var(--text-dim)', paddingBottom: '16px', marginBottom: '16px' }}>
                 <div>
                   <h3 style={{ fontSize: '1.3rem', color: 'var(--accent-gold)', margin: '0 0 4px 0', fontWeight: 800, letterSpacing: '1px' }}>BOARDING PASS</h3>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>Ticket ID: {ticket.id}</p>
@@ -133,11 +133,11 @@ function TicketContent() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                 <div>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>From</p>
-                  <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{route.origin}</p>
+                  <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>{route.origin}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>To</p>
-                  <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{route.destination}</p>
+                  <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>{route.destination}</p>
                 </div>
               </div>
 
@@ -145,7 +145,7 @@ function TicketContent() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Passenger Name</p>
-                    <p style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>{ticket.passengerName}</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{ticket.passengerName}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Seat Number</p>
@@ -156,31 +156,31 @@ function TicketContent() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Departure Time</p>
-                    <p style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>{schedule.scheduledTime}</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{schedule.scheduledTime}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Bus No.</p>
-                    <p style={{ fontSize: '1rem', fontWeight: 600, color: '#fff', fontFamily: 'monospace' }}>{schedule.busNumber}</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'monospace' }}>{schedule.busNumber}</p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--btn-secondary-bg)', padding: '12px', borderRadius: '6px' }}>
                   <div>
                     <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '2px', textTransform: 'uppercase' }}>Booked On</p>
-                    <p style={{ fontSize: '0.85rem', color: '#ccc' }}>{new Date(ticket.timestamp).toLocaleString()}</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>{new Date(ticket.timestamp).toLocaleString()}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '2px', textTransform: 'uppercase' }}>Status</p>
-                    <p style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 700 }}>PAID ({ticket.momoProvider})</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--glow-green)', fontWeight: 700 }}>PAID ({ticket.momoProvider})</p>
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '16px' }} data-html2canvas-ignore="true">
+              <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', borderTop: '1px solid var(--border-glass)', paddingTop: '16px' }} data-html2canvas-ignore="true">
                 <button onClick={() => downloadImage(ticket.id)} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }}>
                   Save PNG
                 </button>
-                <button onClick={() => downloadPDF(ticket.id)} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.05)' }}>
+                <button onClick={() => downloadPDF(ticket.id)} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }}>
                   Save PDF
                 </button>
               </div>

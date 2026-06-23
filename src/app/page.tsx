@@ -316,11 +316,10 @@ export default function CommuterPortal() {
         <section className="glass-panel reservation-grid" style={{ padding: '24px' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Select Seat: Bus {selectedSchedule.busNumber}</h2>
-            <div className="seat-grid" style={{ 
+            <div className="seat-grid seat-map-container" style={{ 
               display: 'grid', 
               gridTemplateColumns: 'repeat(4, 1fr)', 
               gap: '12px', 
-              background: 'rgba(0, 0, 0, 0.4)', 
               padding: '24px', 
               borderRadius: '12px',
               maxWidth: '320px',
@@ -335,25 +334,19 @@ export default function CommuterPortal() {
                     key={seat}
                     disabled={isBooked}
                     onClick={() => selectSeat(seat)}
+                    className={
+                      isBooked 
+                        ? 'seat-btn-booked' 
+                        : isSelected 
+                          ? 'seat-btn-selected' 
+                          : 'seat-btn-available'
+                    }
                     style={{
                       aspectRatio: '1',
                       borderRadius: '6px',
-                      border: '1px solid',
-                      borderColor: isBooked 
-                        ? 'rgba(239, 68, 68, 0.2)' 
-                        : isSelected 
-                          ? 'var(--primary)' 
-                          : 'rgba(255, 255, 255, 0.1)',
-                      background: isBooked 
-                        ? 'rgba(239, 68, 68, 0.15)' 
-                        : isSelected 
-                          ? 'var(--primary)' 
-                          : 'rgba(255, 255, 255, 0.03)',
-                      color: isBooked 
-                        ? '#ef4444' 
-                        : isSelected 
-                          ? '#fff' 
-                          : 'var(--text-muted)',
+                      borderWidth: '1px',
+                      borderStyle: 'solid',
+                      fontSize: '1rem',
                       fontWeight: 600,
                       cursor: isBooked ? 'not-allowed' : 'pointer',
                       transition: 'var(--transition-smooth)'
