@@ -1,24 +1,74 @@
+/**
+ * ============================================================================
+ * regulator/page.tsx — REGULATORY COMPLIANCE DASHBOARD (route: /regulator)
+ * ============================================================================
+ *
+ * The transport authority's oversight view, and the third stakeholder
+ * perspective in the system (alongside passenger and operator).
+ *
+ * THE PROBLEM THIS ADDRESSES — REVENUE LEAKAGE
+ * --------------------------------------------
+ * Under paper ticketing, operators self-report their takings and regulators
+ * have no independent means of checking them. Fares can go unrecorded between
+ * the passenger paying and the revenue being declared, so the sums are neither
+ * fully collected nor fully taxed. Manual auditing is slow and easily
+ * frustrated by incomplete records.
+ *
+ * THE APPROACH
+ * ------------
+ * Every consequential action anywhere in the system — a booking, a dispatch, a
+ * gate scan, a failed verification — writes an entry to a shared audit ledger
+ * as it happens. This page reads that ledger and presents:
+ *
+ *   - four aggregate indicators (revenue, bookings, boardings, incidents);
+ *   - the full chronological event ledger, with the hash linking each entry to
+ *     the one before it, so retrospective alteration becomes detectable.
+ *
+ * The regulator therefore sees the same records the operator does, generated
+ * automatically rather than self-reported.
+ *
+ * READ-ONLY BY DESIGN: this page offers no controls that modify data. A
+ * regulator observes; it does not operate the service. That constraint is also
+ * what makes the ledger credible as evidence.
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { getAuditLogs, getBookings, AuditLog } from '../../services/database';
 
 export default function RegulatorPortal() {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [bookingsCount, setBookingsCount] = useState(0);
-  const [revenueSum, setRevenueSum] = useState(0);
-  const [validatedCount, setValidatedCount] = useState(0);
-  const [incidentCount, setIncidentCount] = useState(0);
+  const [logs, setLogs] = useState<AuditLog[]>([]);          // ledger entries, newest first for display
+  const [bookingsCount, setBookingsCount] = useState(0);     // total tickets sold
+  const [revenueSum, setRevenueSum] = useState(0);           // total fares, for tax reconciliation
+  const [validatedCount, setValidatedCount] = useState(0);   // passengers who actually boarded
+  const [incidentCount, setIncidentCount] = useState(0);     // security events requiring attention
 
+  /** Loads the ledger and computes the four headline compliance indicators. */
   const loadData = async () => {
     const auditLogs = await getAuditLogs();
+
+    // Stored oldest-first because the hash chain must be built and verified in
+    // that order; reversed here purely for display, so recent activity appears
+    // at the top. A COPY is reversed ([...auditLogs]) because Array.reverse()
+    // mutates in place and would otherwise corrupt the chain ordering.
     setLogs([...auditLogs].reverse());
 
     const allBookings = await getBookings();
     setBookingsCount(allBookings.length);
+
+    // Independently computed revenue total — the figure that can be compared
+    // against the operator's own declaration to expose under-reporting.
     setRevenueSum(allBookings.reduce((sum, b) => sum + b.amountPaid, 0));
+
+    // Tickets sold versus passengers actually boarded. A persistent gap
+    // between these two figures is itself a signal worth investigating.
     setValidatedCount(allBookings.filter(b => b.isValidated).length);
-    
+
+    // Incident detection by keyword. The gate scanner writes actions such as
+    // 'security_duplicate_scan' and 'security_signature_mismatch', so matching
+    // these substrings surfaces fraud attempts without needing a separate
+    // incident table.
     const incidents = auditLogs.filter(
       l => l.action.includes('security') || l.action.includes('mismatch') || l.action.includes('duplicate')
     ).length;
@@ -41,8 +91,13 @@ export default function RegulatorPortal() {
         </p>
       </section>
 
+      {/* ================= COMPLIANCE INDICATORS =================
+          Four figures giving an at-a-glance regulatory picture: money
+          collected, tickets sold, passengers boarded, and incidents raised. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-        
+
+        {/* INDICATOR 1 — revenue, computed independently of operator
+            self-reporting. This is the direct counter to revenue leakage. */}
         <div className="glass-panel" style={{ padding: '20px' }}>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Taxable Revenue Reconciled</p>
           <p style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--accent-gold)' }}>GHS {revenueSum}.00</p>
@@ -55,12 +110,16 @@ export default function RegulatorPortal() {
           <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px' }}>Across all verified operators</p>
         </div>
 
+        {/* INDICATOR 3 — passengers who actually boarded. Compared against
+            indicator 2, the difference reveals no-shows or unscanned entry. */}
         <div className="glass-panel" style={{ padding: '20px' }}>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Verified Passenger Boardings</p>
           <p style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--glow-green)' }}>{validatedCount}</p>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px' }}>Offline QR validation match</p>
         </div>
 
+        {/* INDICATOR 4 — fraud attempts caught at the gate. The whole card
+            turns red when any incident exists, so it cannot be overlooked. */}
         <div className="glass-panel" style={{ padding: '20px', borderColor: incidentCount > 0 ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-glass)' }}>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Incidents / Alerts Triggered</p>
           <p style={{ 
@@ -75,6 +134,12 @@ export default function RegulatorPortal() {
 
       </div>
 
+      {/* ================= THE AUDIT LEDGER =================
+          Every recorded event, newest first. Each row displays the actor and
+          action, a description, and the hash binding it to the preceding
+          entry. Security events are outlined in red. The visible hash chain is
+          the point of this section: altering any historical entry breaks the
+          links that follow it, making tampering evident to an auditor. */}
       <section className="glass-panel" style={{ padding: '24px' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Independent Monitoring Ledger</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '24px' }}>

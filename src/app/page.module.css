@@ -1,3 +1,23 @@
+/* ==========================================================================
+   page.module.css — UNUSED FILE (Next.js starter template leftover)
+   ==========================================================================
+
+   NOTE FOR EXAMINERS: this stylesheet is NOT part of the AccraTransit system
+   and has no effect on the running application.
+
+   It was generated automatically by `create-next-app` to style the default
+   Next.js welcome page. That placeholder page was replaced by the commuter
+   portal in src/app/page.tsx, which styles itself through globals.css and
+   inline styles instead. No file imports this stylesheet, so none of the rules
+   below are ever applied — a search for "page.module" across src/ returns no
+   matches.
+
+   It is retained only to keep the generated project scaffold intact and can
+   safely be deleted. The class names here (.page, .main, .intro, .ctas, .logo)
+   belong to the discarded template and do not correspond to any component in
+   this project.
+   ========================================================================== */
+
 .page {
   --background: #fafafa;
   --foreground: #fff;

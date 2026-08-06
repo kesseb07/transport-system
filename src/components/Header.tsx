@@ -1,21 +1,54 @@
+/**
+ * ============================================================================
+ * Header.tsx — SITE NAVIGATION BAR
+ * ============================================================================
+ *
+ * Persistent navigation shown on every page, rendered from layout.tsx.
+ *
+ * Its links double as a map of the system's four stakeholder views, which is
+ * useful during a demonstration: an examiner can move directly between the
+ * passenger, operator, gate and regulator perspectives on the same live data.
+ *
+ *   /          Commuter Portal  — passenger booking (Dijkstra + seat selection)
+ *   /map       Live Map         — simulated fleet tracking
+ *   /operator  Operator Dash    — dispatch control (leaky bucket algorithm)
+ *   /gate      Gate Scanner     — offline ticket verification
+ *   /regulator Regulator Audit  — compliance ledger and hash chain
+ *
+ * It also provides the light/dark theme toggle and the mobile navigation menu.
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Header() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState('light');
+  const [isOpen, setIsOpen] = useState(false);   // mobile menu open/closed
+  const [theme, setTheme] = useState('light');   // active colour scheme
 
+  /**
+   * Applies the theme by writing a data-theme attribute onto the <html>
+   * element. The CSS in globals.css defines a different set of colour
+   * variables for each value, so this single attribute re-themes the entire
+   * application at once — no component needs to know about the theme.
+   *
+   * MapComponent.tsx watches this same attribute with a MutationObserver in
+   * order to swap its map tiles to match.
+   */
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+  }, [theme]); // re-runs whenever the theme changes
 
   const toggleTheme = () => {
+    // Uses the updater form (prev => ...) rather than reading `theme`
+    // directly, which is the safe way to derive new state from old.
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
   return (
+    // position: sticky keeps the navigation visible while the page scrolls,
+    // so the stakeholder views remain one click apart at all times.
     <header style={{
       position: 'sticky',
       top: 0,
@@ -42,8 +75,11 @@ export default function Header() {
         </span>
       </Link>
       
-      <button 
-        className="hamburger-btn" 
+      {/* Hamburger menu button. Hidden on desktop and revealed below 768px by
+          the .hamburger-btn rules in globals.css — a mobile-first concession,
+          since most users in the target context browse on a phone. */}
+      <button
+        className="hamburger-btn"
         onClick={() => setIsOpen(!isOpen)}
         style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', fontSize: '1.5rem', cursor: 'pointer', zIndex: 101 }}
         aria-label="Toggle menu"
@@ -51,6 +87,11 @@ export default function Header() {
         {isOpen ? '✕' : '☰'}
       </button>
 
+      {/* Navigation links. On desktop this is a horizontal row; on mobile the
+          same markup becomes a full-screen overlay, shown or hidden by the
+          conditional class. Each link closes the mobile menu on selection.
+          Next.js <Link> performs client-side navigation, so switching between
+          stakeholder views is instant and does not reload the page. */}
       <nav className={`desktop-nav ${isOpen ? 'mobile-nav-open' : 'mobile-nav-closed'}`}>
         <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.85rem', marginRight: 'auto' }}>
           {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}

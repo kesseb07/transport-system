@@ -1,5 +1,40 @@
+/* ==========================================================================
+   globals.css — GLOBAL STYLESHEET AND DESIGN SYSTEM
+   ==========================================================================
+
+   The single stylesheet for the entire application, imported once in
+   layout.tsx. It defines the shared visual language: colours, buttons, form
+   controls, badges, the seat map and the responsive layout rules.
+
+   ARCHITECTURE — CSS CUSTOM PROPERTIES (VARIABLES)
+   -----------------------------------------------
+   Colours are declared once as variables (--primary, --text-main, and so on)
+   and referenced everywhere via var(). This is what makes the light/dark theme
+   possible: the [data-theme="light"] block below redefines the same variable
+   names with different values, so toggling one attribute on the <html> element
+   re-themes every component at once. No component contains a hard-coded
+   theme colour.
+
+   No CSS framework is used. Vanilla CSS keeps the payload small, which matters
+   for the low-bandwidth mobile connections this project targets, and keeps
+   every style inspectable rather than hidden behind framework classes.
+
+   NOTE ON STYLING APPROACH: this file holds shared, reusable styles, while
+   one-off layout details (grid gaps, spacing) are written as inline styles in
+   the components. The split is pragmatic rather than principled — a larger
+   system would move more of the inline styling into named classes here.
+   ========================================================================== */
+
+/* Web font loaded from Google Fonts. display=swap renders text immediately in
+   a fallback face while the font downloads, so content stays readable on slow
+   connections instead of appearing blank. */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
+/* --------------------------------------------------------------------------
+   DEFAULT (DARK) THEME
+   :root targets the document root, making these variables available to every
+   element. These are the fallback values, overridden by the light theme below.
+   -------------------------------------------------------------------------- */
 :root {
   --font-family: 'Outfit', sans-serif;
   
@@ -7,14 +42,18 @@
   --bg-card: rgba(30, 41, 59, 0.7);
   --bg-card-hover: rgba(30, 41, 59, 0.9);
   
+  /* Brand blue, used for primary actions and selected seats. */
   --primary: #3b82f6;
   --primary-glow: rgba(59, 130, 246, 0.25);
-  
+
+  /* Amber accent, reserved for monetary values — fares, revenue totals — so
+     money is visually distinct from other figures throughout the interface. */
   --accent-gold: #fbbf24;
   --accent-gold-glow: rgba(251, 191, 36, 0.15);
-  
+
   --accent-teal: #0d9488;
-  
+
+  /* Text hierarchy: main for content, muted for labels, dim for metadata. */
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
@@ -22,6 +61,9 @@
   --border-glass: rgba(255, 255, 255, 0.1);
   --border-glass-active: rgba(59, 130, 246, 0.5);
   
+  /* Seat map palette. The three seat states — available, booked, selected —
+     must stay clearly distinguishable in both themes, since misreading them
+     would cause booking errors. */
   --seat-map-bg: rgba(0, 0, 0, 0.2);
   --seat-available-bg: rgba(255, 255, 255, 0.05);
   --seat-available-border: rgba(255, 255, 255, 0.15);
@@ -30,9 +72,11 @@
   --seat-booked-color: #ef4444;
   --seat-selected-color: #ffffff;
   
+  /* Status colours. Green signals success (validated ticket, low congestion);
+     red signals failure or alert (signature mismatch, high congestion). */
   --glow-green: #10b981;
   --glow-red: #ef4444;
-  
+
   --bg-gradient-top: transparent;
   --bg-gradient-bottom: transparent;
 
@@ -45,6 +89,15 @@
   --header-bg: #1e293b;
 }
 
+/* --------------------------------------------------------------------------
+   LIGHT THEME OVERRIDES
+   Redefines the SAME variable names with light-appropriate values. Because
+   every component references the variables rather than literal colours, adding
+   this attribute to <html> re-themes the whole application instantly.
+   Contrast ratios are raised here (darker text, stronger borders) so the
+   interface stays legible on a phone screen in direct sunlight — a realistic
+   condition at an open-air Ghanaian terminal.
+   -------------------------------------------------------------------------- */
 [data-theme="light"] {
   --bg-dark: #ffffff;
   --bg-card: #f8fafc;
@@ -84,6 +137,12 @@
   --header-bg: #ffffff;
 }
 
+/* --------------------------------------------------------------------------
+   BASE RESET
+   Neutralises inconsistent browser defaults. border-box makes padding and
+   borders count INSIDE an element's declared width, which makes grid and
+   flex layouts predictable.
+   -------------------------------------------------------------------------- */
 * {
   box-sizing: border-box;
   padding: 0;
@@ -107,6 +166,14 @@ body {
   flex-direction: column;
 }
 
+/* --------------------------------------------------------------------------
+   COMPONENT STYLES
+   -------------------------------------------------------------------------- */
+
+/* The card surface used for nearly every panel in the application
+   (search form, seat map, metrics, manifest, audit ledger). backdrop-filter
+   produces the frosted "glassmorphism" effect by blurring whatever sits
+   behind the element. */
 .glass-panel {
   background: var(--bg-card);
   backdrop-filter: blur(16px);
@@ -126,6 +193,8 @@ body {
   background: var(--bg-card-hover);
 }
 
+/* Primary action button — search, pay, dispatch. One per screen area, so the
+   next step is always visually obvious. */
 .btn-primary {
   background: var(--primary);
   color: #ffffff;
@@ -157,6 +226,8 @@ body {
   transform: translateY(0);
 }
 
+/* Secondary button for lower-priority actions: navigation links, seat
+   selection, downloads. */
 .btn-secondary {
   background: var(--btn-secondary-bg);
   color: var(--text-main);
@@ -179,6 +250,8 @@ body {
   border-color: var(--border-glass-active);
 }
 
+/* Form controls styled globally so every input across the five pages matches
+   without needing individual classes. */
 input, select {
   background: var(--input-bg);
   border: 1px solid var(--border-glass);
@@ -190,12 +263,18 @@ input, select {
   transition: var(--transition-smooth);
 }
 
+/* Focus state. The default browser outline is removed, but a visible ring is
+   substituted in its place — never remove a focus indicator outright, as
+   keyboard and screen-reader users depend on it to track their position. */
 input:focus, select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 2px var(--primary-glow);
 }
 
+/* Status pills used throughout: bus status, payment state, validation result
+   and audit-event type. The three variants below encode meaning by colour —
+   amber for pending, green for success, red for error. */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -238,7 +317,14 @@ input:focus, select:focus {
   animation: pulse-slow 2s infinite ease-in-out;
 }
 
-/* Responsive utilities */
+/* --------------------------------------------------------------------------
+   RESPONSIVE LAYOUT
+   Mobile-first is a requirement rather than a preference here: the majority of
+   users in the target context access the web on a phone, so every multi-column
+   layout must collapse gracefully to a single column.
+   -------------------------------------------------------------------------- */
+
+/* Commuter portal: search panel beside results, collapsing on mobile. */
 .main-grid {
   display: grid;
   grid-template-columns: minmax(300px, 1fr) minmax(300px, 2fr);
@@ -256,6 +342,9 @@ input:focus, select:focus {
   font-size: 2.5rem;
 }
 
+/* Below 768px (tablets and phones) every two-column layout becomes a single
+   column, headings shrink, and the seat map tightens its spacing so all seats
+   remain reachable without horizontal scrolling. */
 @media (max-width: 768px) {
   .main-grid {
     grid-template-columns: 1fr;
@@ -275,7 +364,13 @@ input:focus, select:focus {
   }
 }
 
-/* Navigation styles */
+/* --------------------------------------------------------------------------
+   NAVIGATION
+   The same markup in Header.tsx serves both a horizontal desktop bar and a
+   full-screen mobile overlay; only these rules differ between them.
+   -------------------------------------------------------------------------- */
+
+/* Hamburger button hidden on desktop, revealed in the mobile block below. */
 .hamburger-btn {
   display: none !important;
 }
@@ -313,6 +408,9 @@ input:focus, select:focus {
     text-align: center;
   }
   
+  /* Closed menu is faded and shifted out of view. pointer-events: none is
+     essential — without it the invisible menu would still intercept taps
+     intended for the page beneath. */
   .mobile-nav-closed {
     opacity: 0;
     pointer-events: none;
@@ -326,11 +424,19 @@ input:focus, select:focus {
   }
 }
 
-/* Seat map utilities */
+/* --------------------------------------------------------------------------
+   SEAT MAP
+   The three mutually exclusive seat states. Each is distinguished by BOTH
+   colour and border rather than colour alone, so the map remains usable for
+   colour-blind passengers. Booked seats also carry cursor: not-allowed, giving
+   a second non-visual cue that the seat cannot be chosen.
+   The !important flags override the inline styles set in page.tsx.
+   -------------------------------------------------------------------------- */
 .seat-map-container {
   background: var(--seat-map-bg);
 }
 
+/* Free seat — selectable. */
 .seat-btn-available {
   background: var(--seat-available-bg);
   border-color: var(--seat-available-border);
@@ -340,6 +446,7 @@ input:focus, select:focus {
   background: var(--btn-secondary-hover);
 }
 
+/* Taken by another passenger — red and non-interactive. */
 .seat-btn-booked {
   background: var(--seat-booked-bg) !important;
   border-color: var(--seat-booked-border) !important;
@@ -347,6 +454,7 @@ input:focus, select:focus {
   cursor: not-allowed;
 }
 
+/* Chosen by the current passenger — filled in the brand colour. */
 .seat-btn-selected {
   background: var(--primary) !important;
   border-color: var(--primary) !important;

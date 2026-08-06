@@ -1,3 +1,53 @@
+/**
+ * ============================================================================
+ * supabase.ts — DATABASE SCHEMA TYPE DEFINITIONS
+ * ============================================================================
+ *
+ * *** AUTO-GENERATED FILE — DO NOT EDIT BY HAND ***
+ *
+ * This file is produced mechanically by the Supabase CLI, which inspects the
+ * live PostgreSQL schema and emits matching TypeScript types:
+ *
+ *     npx supabase gen types typescript --project-id <id> > src/types/supabase.ts
+ *
+ * It is therefore a MIRROR of the database, not hand-written source code. It
+ * is included in the repository so the project compiles without a database
+ * connection. Any manual edit would be silently overwritten the next time the
+ * command is run — which is also why this file carries only this header rather
+ * than explanatory comments throughout.
+ *
+ * WHY IT EXISTS
+ * -------------
+ * These types give the application compile-time safety against the real schema.
+ * Because the Supabase client in services/supabaseClient.ts is parameterised
+ * with the `Database` type below, TypeScript verifies every query: selecting a
+ * column that does not exist, or inserting a string where the column expects a
+ * number, becomes a build error rather than a runtime failure.
+ *
+ * WHAT IT DESCRIBES
+ * -----------------
+ * Four tables, each with three variants — `Row` (shape when read), `Insert`
+ * (shape when creating, with defaults optional) and `Update` (all fields
+ * optional for partial edits):
+ *
+ *   operators  — the bus companies
+ *   routes     — origin/destination pairs and fares
+ *   schedules  — individual buses; `reserved_seats` drives the dispatch model
+ *   bookings   — purchased tickets, with foreign keys to schedules
+ *   audit_logs — the tamper-evident regulatory ledger
+ *
+ * The `Relationships` arrays record the foreign keys enforced by PostgreSQL:
+ * a booking must reference a real schedule, and a schedule must reference a
+ * real operator and route. This is referential integrity enforced at the
+ * database level, independent of application code.
+ *
+ * The generic helper types at the end of the file (Tables, TablesInsert,
+ * TablesUpdate, Enums, CompositeTypes) are convenience utilities emitted by the
+ * generator for extracting a specific table's type, e.g. `Tables<'bookings'>`.
+ * They are part of the standard generated output and are not all used by this
+ * project.
+ */
+
 export type Json =
   | string
   | number
