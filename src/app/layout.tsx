@@ -19,6 +19,7 @@
 
 import type { Metadata } from "next";
 import Header from "@/components/Header";
+import Logo from "@/components/Logo";
 import "./globals.css"; // imported here so the global stylesheet applies to every page
 
 /**
@@ -62,9 +63,18 @@ export default function RootLayout({
           textAlign: 'center',
           color: 'var(--text-dim)',
           fontSize: '0.85rem',
-          marginTop: 'auto'
+          marginTop: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px'
         }}>
-          GhanaTBS Bus Booking System Prototype. Built for academic validation under Ghana Transport Modernisation Guidelines.
+          {/* The same inline mark used in the header, set smaller and slightly
+              faded so it identifies the page without competing with content. */}
+          <Logo height={22} className="site-logo-footer" />
+          <span>
+            GhanaTBS Bus Booking System Prototype. Built for academic validation under Ghana Transport Modernisation Guidelines.
+          </span>
         </footer>
       </body>
     </html>

@@ -87,6 +87,12 @@
   
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --header-bg: #1e293b;
+
+  /* Colour of the "Ghana" lettering in the logo (Logo.tsx). The red, gold and
+     green of the mark are fixed brand values, but the lettering has to invert
+     against the header background, so it is driven from here like every other
+     themed colour. Dark theme places the wordmark on #1e293b, hence white. */
+  --logo-foreground: #ffffff;
 }
 
 /* --------------------------------------------------------------------------
@@ -135,6 +141,9 @@
   
   --input-bg: #ffffff;
   --header-bg: #ffffff;
+
+  /* Wordmark now sits on a white header, so the lettering returns to black. */
+  --logo-foreground: #0f172a;
 }
 
 /* --------------------------------------------------------------------------
@@ -375,6 +384,24 @@ input:focus, select:focus {
   display: none !important;
 }
 
+/* The wordmark is a wide mark (roughly 8.6 units across for every 1 tall), so
+   on a narrow phone it is capped by available width rather than by height.
+   width: auto keeps the aspect ratio intact whichever limit takes effect. */
+.site-logo {
+  height: 28px;
+  width: auto;
+  max-width: 60vw;
+}
+
+/* Footer copy of the mark: smaller, and softened so it reads as a sign-off
+   rather than a second navigation target. */
+.site-logo-footer {
+  height: 22px;
+  width: auto;
+  max-width: 70vw;
+  opacity: 0.75;
+}
+
 .desktop-nav {
   display: flex;
   gap: 16px;
@@ -384,7 +411,12 @@ input:focus, select:focus {
   .hamburger-btn {
     display: block !important;
   }
-  
+
+  /* Shrink the wordmark on phones so it never crowds the hamburger button. */
+  .site-logo {
+    height: 24px;
+  }
+
   .desktop-nav {
     position: fixed;
     top: 0;

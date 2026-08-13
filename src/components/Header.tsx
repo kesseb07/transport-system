@@ -22,6 +22,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Logo from './Logo';
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);   // mobile menu open/closed
@@ -61,18 +62,11 @@ export default function Header() {
       justifyContent: 'space-between',
       alignItems: 'center'
     }}>
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', zIndex: 101 }}>
-        <span style={{
-          background: 'var(--primary)',
-          color: '#ffffff',
-          padding: '6px 12px',
-          borderRadius: '8px',
-          fontWeight: 800,
-          fontSize: '1rem',
-          letterSpacing: '0.05em'
-        }}>
-          GhanaTBS
-        </span>
+      {/* Brand mark, and the route home from anywhere in the application.
+          Logo.tsx draws it as an inline SVG so its lettering picks up the
+          current theme colour rather than being baked into an image file. */}
+      <Link href="/" aria-label="GhanaTBS home" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', zIndex: 101 }}>
+        <Logo height={28} className="site-logo" />
       </Link>
       
       {/* Hamburger menu button. Hidden on desktop and revealed below 768px by

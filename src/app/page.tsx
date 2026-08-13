@@ -485,7 +485,7 @@ export default function CommuterPortal() {
             </div>
           ) : (
             <div className="glass-panel" style={{ padding: '64px 32px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Enter your route coordinates on the left and select search to load operator dispatch queues.
+              Enter your route coordinates on the left and query the schedules to load operator dispatch queues.
             </div>
           )}
         </section>
