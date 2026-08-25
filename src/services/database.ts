@@ -191,6 +191,53 @@ const seedLocalSchedules = (): Schedule[] => {
   return list;
 };
 
+/**
+ * Seeds the operator and route reference tables into Supabase.
+ *
+ * WHY THIS IS REQUIRED BEFORE SEEDING SCHEDULES
+ * ---------------------------------------------
+ * OPERATORS and ROUTES are held as source constants above, but the database
+ * also stores them as real tables, and `schedules` carries foreign keys to
+ * both (schedules_operator_id_fkey, schedules_route_id_fkey). A schedule row
+ * can therefore only be inserted once its operator and route already exist as
+ * rows.
+ *
+ * Without this step the timetable seed fails wholesale. PostgREST inserts a
+ * batch in a single transaction, so one unsatisfied foreign key rolls back all
+ * 108 rows, leaving `schedules` permanently empty. Bookings then fail their own
+ * foreign key to `schedules`, and the boarding-pass page finds nothing.
+ *
+ * Uses upsert with ignoreDuplicates so it is idempotent: safe to run on every
+ * seed attempt, whether the tables are empty, partially populated (the state
+ * that caused the failure above, where the route network had grown in source
+ * but not in the database), or already complete.
+ */
+const seedReferenceData = async (): Promise<boolean> => {
+  if (!supabase) return false;
+
+  const { error: opError } = await supabase
+    .from('operators')
+    .upsert(
+      OPERATORS.map(o => ({ id: o.id, name: o.name, code: o.code, color: o.color })),
+      { onConflict: 'id', ignoreDuplicates: true }
+    );
+  if (opError) return false;
+
+  const { error: routeError } = await supabase
+    .from('routes')
+    .upsert(
+      ROUTES.map(r => ({
+        id: r.id,
+        origin: r.origin,
+        destination: r.destination,
+        distance_km: r.distanceKm,
+        base_fare_ghs: r.baseFareGhs
+      })),
+      { onConflict: 'id', ignoreDuplicates: true }
+    );
+  return !routeError;
+};
+
 // ===========================================================================
 // SCHEDULE ACCESS
 // ===========================================================================
@@ -261,7 +308,24 @@ export const getSchedules = async (): Promise<Schedule[]> => {
         departure_rate_per_hour: s.departureRatePerHour,
         status: s.status
       }));
-      await supabase.from('schedules').insert(insertData);
+      // Operators and routes must exist as rows before any schedule can
+      // reference them, so they are seeded first. If that fails there is no
+      // point attempting the timetable, which would only violate its foreign
+      // keys.
+      const referenceReady = await seedReferenceData();
+
+      if (referenceReady) {
+        const { error: seedError } = await supabase.from('schedules').insert(insertData);
+
+        // The error is checked rather than discarded. A silently failed seed
+        // used to leave the database empty while the app carried on with the
+        // in-memory timetable, which split writes and reads across two
+        // different stores. Persisting the seeds to localStorage keeps the
+        // session self-consistent when the cloud write does not land.
+        if (!seedError) return seeds;
+      }
+
+      if (isBrowser) localStorage.setItem('bus_schedules_v2', JSON.stringify(seeds));
       return seeds;
     }
   }
@@ -336,7 +400,7 @@ export const getBookings = async (): Promise<Booking[]> => {
   if (supabase) {
     const { data, error } = await supabase.from('bookings').select('*');
     if (!error && data) {
-      return data.map(item => ({
+      const remote: Booking[] = data.map(item => ({
         id: item.id,
         scheduleId: item.schedule_id || '',
         passengerName: item.passenger_name,
@@ -352,6 +416,27 @@ export const getBookings = async (): Promise<Booking[]> => {
         isValidated: !!item.is_validated,          // coerce nullable boolean to strict true/false
         validatedAt: item.validated_at || undefined // normalise SQL NULL to undefined
       }));
+
+      // Merge in any bookings held only in localStorage.
+      //
+      // addBooking() falls back to localStorage whenever its cloud insert
+      // fails, but this read used to return the Supabase result unconditionally
+      // because the query itself had not errored — an empty table is a
+      // successful query. A ticket written to one store was then looked up in
+      // the other, and the boarding-pass page reported "Tickets Not Found" for a
+      // ticket that had genuinely been issued.
+      //
+      // Cloud rows stay authoritative on a shared ID, since they carry
+      // validation state updated by the gate scanner. Local-only rows are
+      // appended rather than discarded, so a ticket remains retrievable
+      // whichever tier accepted it.
+      if (!isBrowser) return remote;
+      const localCache = localStorage.getItem('bus_bookings');
+      if (!localCache) return remote;
+
+      const remoteIds = new Set(remote.map(b => b.id));
+      const localOnly: Booking[] = JSON.parse(localCache).filter((b: Booking) => !remoteIds.has(b.id));
+      return [...remote, ...localOnly];
     }
   }
 
