@@ -192,8 +192,10 @@ export default function GateValidationPortal() {
    *
    * NOTE FOR EXAMINERS: despite the button label "Load Mock Valid QR", this
    * sample does NOT pass verification. Its hard-coded signature ('1B3F9A7D')
-   * is not the signature these details actually produce (the correct value is
-   * 'F07A9FB'), so scanning it always yields outcome 3, signature mismatch.
+   * is not the HMAC-SHA256 tag these details actually produce (the correct
+   * value is
+   * '8C040B3A57D60BE3D1E618EFEF099E1C98CDB910C31C7D84D0555974E778CFBC'),
+   * so scanning it always yields outcome 3, signature mismatch.
    *
    * It is therefore a useful demonstration of the FORGED-ticket path, and can
    * be read as illustrating exactly the attack the scheme defends against: a

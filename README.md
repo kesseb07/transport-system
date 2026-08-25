@@ -6,8 +6,8 @@ AccraTransit is an academic research prototype designed to modernize intercity p
 ## 2. Technical Stack
 The system is built as a lightweight, mobile-first web application:
 - Frontend Framework: Next.js with React and TypeScript.
-- Styles: Vanilla CSS with custom global glassmorphism tokens, optimized for low-bandwidth mobile browsers.
-- Real-Time Database: Supabase Integration for real-time WebSocket seat allocations to prevent reservation race conditions.
+- Styles: Vanilla CSS with custom properties and a dual light/dark theme, optimised for low-bandwidth mobile browsers. Light mode measures a 7.1:1 contrast ratio for primary text.
+- Real-Time Database: Supabase integration for WebSocket-backed seat allocation updates. Replication keeps sessions in sync but does not serialise conflicting writes, and the reservation path has a known concurrency defect described in the evaluative essay.
 - Local First Backup: A Dockerized PostgreSQL database fallback is configured to bypass cloud data residency concerns for ethics compliance.
 
 ## 3. Algorithmic Solutions
@@ -17,7 +17,7 @@ First, the Dynamic Rate Leaky Bucket Algorithm acts as the dispatcher control la
 
 Second, Dijkstra's Shortest Path Algorithm operates on a graph representing the main transit nodes in Ghana (Accra, Kumasi, Tamale, Takoradi, Sunyani, Ho), optimizing route recommendations and providing commuters with accurate distance and travel duration estimates.
 
-Third, the Cryptographic Offline QR Ticket Signature System addresses the frequent cellular network dropouts at crowded terminals. Each ticket produces a cryptographically signed payload containing passenger, seat, and bus hashes. Gate verification software validates this signature locally using secret keys, allowing boarding checks without active cloud database lookups.
+Third, the Offline QR Ticket Authentication System addresses the frequent cellular network dropouts at crowded terminals. Each ticket carries its fields together with an HMAC-SHA256 tag computed over them with a shared secret. The gate scanner recomputes the expected tag from the scanned fields and compares, so a boarding check needs no cloud lookup. SHA-256 and the HMAC construction are implemented from first principles in src/services/algorithms.ts and validated against Node's native crypto library. The shared key ships in client-side JavaScript, which is a known limitation of a browser-only prototype and is documented in the source.
 
 ## 4. Setup and Local Execution
 To execute this project locally without Google Drive file locking EPERM issues, copy the project folder to your local drive and follow these commands:
@@ -27,3 +27,22 @@ To execute this project locally without Google Drive file locking EPERM issues, 
 3. Open the browser: http://localhost:3000
 
 The commuter interface is served at the root URL. The operator dashboard is served at /operator, the gate scanner simulator at /gate, and the regulator compliance audit ledger at /regulator.
+
+## 5. Evaluation
+
+An automated evaluation harness reproduces every empirical figure quoted in the evaluative essay:
+
+```
+npm run evaluate
+```
+
+It compiles `src/services` with the project's own TypeScript compiler and runs five procedures:
+route correctness against an independently written Floyd-Warshall reference plus latency
+benchmarking, dispatch model response across a booking-velocity sweep, ticket integrity under
+tampering and forgery, concurrency behaviour of the seat reservation write path, and degradation
+with the cloud database removed.
+
+Results are written to `evaluation/results/results.json` and `evaluation/results/report.md`.
+
+The harness reports failures as well as successes. The concurrency procedure records a defect in
+the reservation write path rather than a pass.

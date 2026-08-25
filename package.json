@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "evaluate": "tsc src/services/algorithms.ts src/services/database.ts --outDir .evaluation-build --module commonjs --target es2020 --lib es2020,dom --skipLibCheck --esModuleInterop && node evaluation/evaluate.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.43.4",

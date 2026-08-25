@@ -1,0 +1,588 @@
+{
+  "meta": {
+    "generatedAt": "2026-08-24T12:10:29.896Z",
+    "node": "v24.13.1",
+    "platform": "win32 x64"
+  },
+  "t1": {
+    "pairsTested": 42,
+    "agreementWithReference": 42,
+    "disagreements": 0,
+    "mismatches": [],
+    "handlesUnreachable": true,
+    "multiHop": {
+      "accraTakoradi": {
+        "path": [
+          "Acc",
+          "Cap",
+          "Tak"
+        ],
+        "km": 220,
+        "mins": 240
+      },
+      "accraTamale": {
+        "path": [
+          "Acc",
+          "Kum",
+          "Tam"
+        ],
+        "km": 650,
+        "mins": 630
+      }
+    },
+    "latencyUs": {
+      "mean": 10.5906775,
+      "median": 7,
+      "p95": 12.1
+    },
+    "routesPerSecond": 94422.66559433992,
+    "iterations": 200000,
+    "pathTable": [
+      {
+        "from": "Acc",
+        "to": "Kum",
+        "path": "Acc -> Kum",
+        "km": 270,
+        "mins": 270,
+        "reference": 270,
+        "agrees": true
+      },
+      {
+        "from": "Acc",
+        "to": "Tam",
+        "path": "Acc -> Kum -> Tam",
+        "km": 650,
+        "mins": 630,
+        "reference": 650,
+        "agrees": true
+      },
+      {
+        "from": "Acc",
+        "to": "Tak",
+        "path": "Acc -> Cap -> Tak",
+        "km": 220,
+        "mins": 240,
+        "reference": 220,
+        "agrees": true
+      },
+      {
+        "from": "Acc",
+        "to": "Sun",
+        "path": "Acc -> Kum -> Sun",
+        "km": 390,
+        "mins": 390,
+        "reference": 390,
+        "agrees": true
+      },
+      {
+        "from": "Acc",
+        "to": "Ho",
+        "path": "Acc -> Ho",
+        "km": 160,
+        "mins": 180,
+        "reference": 160,
+        "agrees": true
+      },
+      {
+        "from": "Acc",
+        "to": "Cap",
+        "path": "Acc -> Cap",
+        "km": 145,
+        "mins": 150,
+        "reference": 145,
+        "agrees": true
+      },
+      {
+        "from": "Kum",
+        "to": "Acc",
+        "path": "Kum -> Acc",
+        "km": 270,
+        "mins": 270,
+        "reference": 270,
+        "agrees": true
+      },
+      {
+        "from": "Kum",
+        "to": "Tam",
+        "path": "Kum -> Tam",
+        "km": 380,
+        "mins": 360,
+        "reference": 380,
+        "agrees": true
+      },
+      {
+        "from": "Kum",
+        "to": "Tak",
+        "path": "Kum -> Acc -> Cap -> Tak",
+        "km": 490,
+        "mins": 510,
+        "reference": 490,
+        "agrees": true
+      },
+      {
+        "from": "Kum",
+        "to": "Sun",
+        "path": "Kum -> Sun",
+        "km": 120,
+        "mins": 120,
+        "reference": 120,
+        "agrees": true
+      },
+      {
+        "from": "Kum",
+        "to": "Ho",
+        "path": "Kum -> Acc -> Ho",
+        "km": 430,
+        "mins": 450,
+        "reference": 430,
+        "agrees": true
+      },
+      {
+        "from": "Kum",
+        "to": "Cap",
+        "path": "Kum -> Acc -> Cap",
+        "km": 415,
+        "mins": 420,
+        "reference": 415,
+        "agrees": true
+      },
+      {
+        "from": "Tam",
+        "to": "Acc",
+        "path": "Tam -> Kum -> Acc",
+        "km": 650,
+        "mins": 630,
+        "reference": 650,
+        "agrees": true
+      },
+      {
+        "from": "Tam",
+        "to": "Kum",
+        "path": "Tam -> Kum",
+        "km": 380,
+        "mins": 360,
+        "reference": 380,
+        "agrees": true
+      },
+      {
+        "from": "Tam",
+        "to": "Tak",
+        "path": "Tam -> Kum -> Acc -> Cap -> Tak",
+        "km": 870,
+        "mins": 870,
+        "reference": 870,
+        "agrees": true
+      },
+      {
+        "from": "Tam",
+        "to": "Sun",
+        "path": "Tam -> Sun",
+        "km": 310,
+        "mins": 300,
+        "reference": 310,
+        "agrees": true
+      },
+      {
+        "from": "Tam",
+        "to": "Ho",
+        "path": "Tam -> Kum -> Acc -> Ho",
+        "km": 810,
+        "mins": 810,
+        "reference": 810,
+        "agrees": true
+      },
+      {
+        "from": "Tam",
+        "to": "Cap",
+        "path": "Tam -> Kum -> Acc -> Cap",
+        "km": 795,
+        "mins": 780,
+        "reference": 795,
+        "agrees": true
+      },
+      {
+        "from": "Tak",
+        "to": "Acc",
+        "path": "Tak -> Cap -> Acc",
+        "km": 220,
+        "mins": 240,
+        "reference": 220,
+        "agrees": true
+      },
+      {
+        "from": "Tak",
+        "to": "Kum",
+        "path": "Tak -> Cap -> Acc -> Kum",
+        "km": 490,
+        "mins": 510,
+        "reference": 490,
+        "agrees": true
+      },
+      {
+        "from": "Tak",
+        "to": "Tam",
+        "path": "Tak -> Cap -> Acc -> Kum -> Tam",
+        "km": 870,
+        "mins": 870,
+        "reference": 870,
+        "agrees": true
+      },
+      {
+        "from": "Tak",
+        "to": "Sun",
+        "path": "Tak -> Cap -> Acc -> Kum -> Sun",
+        "km": 610,
+        "mins": 630,
+        "reference": 610,
+        "agrees": true
+      },
+      {
+        "from": "Tak",
+        "to": "Ho",
+        "path": "Tak -> Cap -> Acc -> Ho",
+        "km": 380,
+        "mins": 420,
+        "reference": 380,
+        "agrees": true
+      },
+      {
+        "from": "Tak",
+        "to": "Cap",
+        "path": "Tak -> Cap",
+        "km": 75,
+        "mins": 90,
+        "reference": 75,
+        "agrees": true
+      },
+      {
+        "from": "Sun",
+        "to": "Acc",
+        "path": "Sun -> Kum -> Acc",
+        "km": 390,
+        "mins": 390,
+        "reference": 390,
+        "agrees": true
+      },
+      {
+        "from": "Sun",
+        "to": "Kum",
+        "path": "Sun -> Kum",
+        "km": 120,
+        "mins": 120,
+        "reference": 120,
+        "agrees": true
+      },
+      {
+        "from": "Sun",
+        "to": "Tam",
+        "path": "Sun -> Tam",
+        "km": 310,
+        "mins": 300,
+        "reference": 310,
+        "agrees": true
+      },
+      {
+        "from": "Sun",
+        "to": "Tak",
+        "path": "Sun -> Kum -> Acc -> Cap -> Tak",
+        "km": 610,
+        "mins": 630,
+        "reference": 610,
+        "agrees": true
+      },
+      {
+        "from": "Sun",
+        "to": "Ho",
+        "path": "Sun -> Kum -> Acc -> Ho",
+        "km": 550,
+        "mins": 570,
+        "reference": 550,
+        "agrees": true
+      },
+      {
+        "from": "Sun",
+        "to": "Cap",
+        "path": "Sun -> Kum -> Acc -> Cap",
+        "km": 535,
+        "mins": 540,
+        "reference": 535,
+        "agrees": true
+      },
+      {
+        "from": "Ho",
+        "to": "Acc",
+        "path": "Ho -> Acc",
+        "km": 160,
+        "mins": 180,
+        "reference": 160,
+        "agrees": true
+      },
+      {
+        "from": "Ho",
+        "to": "Kum",
+        "path": "Ho -> Acc -> Kum",
+        "km": 430,
+        "mins": 450,
+        "reference": 430,
+        "agrees": true
+      },
+      {
+        "from": "Ho",
+        "to": "Tam",
+        "path": "Ho -> Acc -> Kum -> Tam",
+        "km": 810,
+        "mins": 810,
+        "reference": 810,
+        "agrees": true
+      },
+      {
+        "from": "Ho",
+        "to": "Tak",
+        "path": "Ho -> Acc -> Cap -> Tak",
+        "km": 380,
+        "mins": 420,
+        "reference": 380,
+        "agrees": true
+      },
+      {
+        "from": "Ho",
+        "to": "Sun",
+        "path": "Ho -> Acc -> Kum -> Sun",
+        "km": 550,
+        "mins": 570,
+        "reference": 550,
+        "agrees": true
+      },
+      {
+        "from": "Ho",
+        "to": "Cap",
+        "path": "Ho -> Acc -> Cap",
+        "km": 305,
+        "mins": 330,
+        "reference": 305,
+        "agrees": true
+      },
+      {
+        "from": "Cap",
+        "to": "Acc",
+        "path": "Cap -> Acc",
+        "km": 145,
+        "mins": 150,
+        "reference": 145,
+        "agrees": true
+      },
+      {
+        "from": "Cap",
+        "to": "Kum",
+        "path": "Cap -> Acc -> Kum",
+        "km": 415,
+        "mins": 420,
+        "reference": 415,
+        "agrees": true
+      },
+      {
+        "from": "Cap",
+        "to": "Tam",
+        "path": "Cap -> Acc -> Kum -> Tam",
+        "km": 795,
+        "mins": 780,
+        "reference": 795,
+        "agrees": true
+      },
+      {
+        "from": "Cap",
+        "to": "Tak",
+        "path": "Cap -> Tak",
+        "km": 75,
+        "mins": 90,
+        "reference": 75,
+        "agrees": true
+      },
+      {
+        "from": "Cap",
+        "to": "Sun",
+        "path": "Cap -> Acc -> Kum -> Sun",
+        "km": 535,
+        "mins": 540,
+        "reference": 535,
+        "agrees": true
+      },
+      {
+        "from": "Cap",
+        "to": "Ho",
+        "path": "Cap -> Acc -> Ho",
+        "km": 305,
+        "mins": 330,
+        "reference": 305,
+        "agrees": true
+      }
+    ]
+  },
+  "t2": {
+    "totalSeats": 44,
+    "threshold": 37,
+    "velocities": [
+      0,
+      5,
+      10,
+      15,
+      20,
+      30,
+      45,
+      60,
+      90,
+      120
+    ],
+    "grid": [
+      {
+        "bucketLevel": 0,
+        "congestionIndex": 0,
+        "byVelocity": {
+          "0": 120,
+          "5": 444,
+          "10": 222,
+          "15": 148,
+          "20": 111,
+          "30": 74,
+          "45": 49,
+          "60": 37,
+          "90": 25,
+          "120": 19
+        }
+      },
+      {
+        "bucketLevel": 10,
+        "congestionIndex": 0.22727272727272727,
+        "byVelocity": {
+          "0": 120,
+          "5": 324,
+          "10": 162,
+          "15": 108,
+          "20": 81,
+          "30": 54,
+          "45": 36,
+          "60": 27,
+          "90": 18,
+          "120": 14
+        }
+      },
+      {
+        "bucketLevel": 20,
+        "congestionIndex": 0.45454545454545453,
+        "byVelocity": {
+          "0": 120,
+          "5": 204,
+          "10": 102,
+          "15": 68,
+          "20": 51,
+          "30": 34,
+          "45": 23,
+          "60": 17,
+          "90": 11,
+          "120": 9
+        }
+      },
+      {
+        "bucketLevel": 30,
+        "congestionIndex": 0.6818181818181818,
+        "byVelocity": {
+          "0": 120,
+          "5": 84,
+          "10": 42,
+          "15": 28,
+          "20": 21,
+          "30": 14,
+          "45": 9,
+          "60": 7,
+          "90": 5,
+          "120": 4
+        }
+      },
+      {
+        "bucketLevel": 37,
+        "congestionIndex": 0.8409090909090909,
+        "byVelocity": {
+          "0": 0,
+          "5": 0,
+          "10": 0,
+          "15": 0,
+          "20": 0,
+          "30": 0,
+          "45": 0,
+          "60": 0,
+          "90": 0,
+          "120": 0
+        }
+      }
+    ],
+    "properties": {
+      "monotonicInVelocity": true,
+      "departsAtThreshold": true,
+      "zeroVelocityFallbackMinutes": 120,
+      "noNegativeWait": true,
+      "congestionBounded": true
+    }
+  },
+  "t3": {
+    "trials": 5000,
+    "genuineAccepted": 5000,
+    "tamperDetection": {
+      "ticketId": {
+        "trials": 5000,
+        "detected": 5000,
+        "rate": 1
+      },
+      "passengerName": {
+        "trials": 5000,
+        "detected": 5000,
+        "rate": 1
+      },
+      "seatNumber": {
+        "trials": 5000,
+        "detected": 5000,
+        "rate": 1
+      },
+      "busNumber": {
+        "trials": 5000,
+        "detected": 5000,
+        "rate": 1
+      }
+    },
+    "forgedRejected": 5000,
+    "avalanche": {
+      "trials": 2000,
+      "meanBitsChanged": 128.1295,
+      "percent": 50.0505859375,
+      "min": 97,
+      "max": 155
+    },
+    "collisions": {
+      "tickets": 200000,
+      "legacyDjb2": 1,
+      "hmacSha256": 0
+    }
+  },
+  "t4": {
+    "trials": 1000,
+    "scenarioA_lostUpdates": 1000,
+    "scenarioA_finalArray": [
+      20
+    ],
+    "scenarioB_doubleSold": 1000,
+    "scenarioC_staleWritesRejected": 1000,
+    "scenarioC_lostUpdates": 0,
+    "liveSupabaseTested": false,
+    "note": "Executed against an in-process reproduction of the write path. The hosted Supabase instance was not reachable from the evaluation environment, so the live two-client test remains to be run separately."
+  },
+  "t5": {
+    "threw": null,
+    "schedulesReturned": 108,
+    "selfSeeded": true,
+    "expectedSeedSize": 108,
+    "seedSizeMatches": true,
+    "bookingPersisted": true,
+    "signatureSurvivesRoundTrip": true,
+    "schedulePersisted": true,
+    "auditLogWritten": true
+  }
+}

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Supervisor feedback - kept local, not published
 feedback/
+
+# evaluation harness build output
+.evaluation-build/

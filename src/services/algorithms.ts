@@ -127,6 +127,19 @@ export const calculateShortestPath = (startId: string, endId: string): {
   totalDistance: number;
   totalTimeMins: number;
 } => {
+  // --- PHASE 0: VALIDATE THE ENDPOINTS -----------------------------------
+  // Both identifiers must name actual vertices. This guard is not cosmetic:
+  // `previous` is only populated for known cities, so an unknown endId would
+  // make the reconstruction loop in phase 4 read `undefined` rather than
+  // `null` and spin forever, freezing the browser tab rather than reporting
+  // "no route". The dropdowns in the UI cannot currently produce an unknown
+  // code, but a stale saved link or a route record naming a retired terminal
+  // could.
+  const knownNodes = new Set(TRANSIT_GRAPH_NODES.map(node => node.id));
+  if (!knownNodes.has(startId) || !knownNodes.has(endId)) {
+    return { path: [], totalDistance: 0, totalTimeMins: 0 };
+  }
+
   // --- PHASE 1: INITIALISATION ------------------------------------------
   const distances: { [key: string]: number } = {};      // best known km to each city
   const times: { [key: string]: number } = {};          // travel minutes along that same best route
@@ -204,10 +217,14 @@ export const calculateShortestPath = (startId: string, endId: string): {
   // Follow the breadcrumb trail backwards from destination to origin, using
   // unshift() so the final array reads forwards (origin first).
   const path: string[] = [];
+  const walked = new Set<string>(); // defends against a malformed breadcrumb cycle
   let curr: string | null = endId;
-  while (curr !== null) {
+  while (curr !== null && !walked.has(curr)) {
+    walked.add(curr);
     path.unshift(curr);
-    curr = previous[curr];
+    // Coalesce undefined to null: a missing key must end the walk, not
+    // continue it with an undefined cursor.
+    curr = previous[curr] ?? null;
   }
 
   return {
@@ -347,35 +364,249 @@ export const runLeakyBucketSimulation = (
 // different signature, so forged and edited tickets are both rejected.
 //
 // ---------------------------------------------------------------------------
-// ACADEMIC LIMITATION — IMPORTANT, PLEASE READ
+// IMPLEMENTATION NOTE — SCHEME AND ITS REMAINING LIMITATION
 // ---------------------------------------------------------------------------
-// This is a FUNCTIONAL SIMULATION of a signing scheme, not a production-grade
-// one. It demonstrates the offline verification WORKFLOW; it would not
-// withstand a determined attacker. Three specific weaknesses:
+// The scheme is HMAC-SHA256 (Krawczyk, Bellare and Canetti, 1997), computed
+// over the four ticket fields with a shared secret key. Both SHA-256 and the
+// HMAC construction are implemented from first principles below rather than
+// imported, consistently with the rest of this module, so that an examiner can
+// inspect every step of the computation.
 //
-//   1. The hash below is a 32-bit variant of the well-known djb2 string hash,
-//      not a true cryptographic hash such as SHA-256. Only ~4 billion distinct
-//      signatures are possible, so collisions can be found by brute force.
-//   2. The secret key is embedded in client-side JavaScript and is therefore
-//      readable by anyone who inspects the bundle. A real deployment would keep
-//      the signing key on a server and provision gate devices with it securely.
-//   3. This is a keyed hash, not a real HMAC — it lacks HMAC's inner/outer
-//      padding construction, which is what protects against length-extension
-//      attacks.
+// An earlier build of this prototype used a 32-bit djb2 string hash with the
+// key appended to the message. That construction was replaced because it had
+// two defects that undermined the integrity claim the artefact makes:
 //
-// A production system would use the Web Crypto API (crypto.subtle) with
-// HMAC-SHA256, or asymmetric signatures (Ed25519) so that gate devices only
-// need a public verification key and a stolen device leaks nothing. The
-// workflow demonstrated here would be unchanged; only the hash function and
-// key management would differ.
+//   1. A 32-bit digest admits only ~4.3 billion distinct signatures, so a
+//      colliding payload can be found by brute force in seconds on commodity
+//      hardware. SHA-256 raises the digest to 256 bits.
+//   2. Appending a key to a message (H(m || k)) is not an HMAC. HMAC's nested
+//      inner/outer padding construction is what yields a provably secure
+//      message authentication code under the assumption that the compression
+//      function behaves as a pseudo-random function.
+//
+// ONE LIMITATION REMAINS, AND IT IS INHERENT TO A BROWSER PROTOTYPE:
+//
+//   * The secret key is embedded in client-side JavaScript and is therefore
+//     readable by anyone who inspects the bundle. Since the whole point of the
+//     scheme is that gate devices verify without a network, a symmetric key
+//     must reach those devices somehow, and in a browser-only prototype there
+//     is nowhere to hide it. A real deployment would either provision gate
+//     devices with the key through a secure channel and keep it out of the
+//     passenger-facing bundle, or move to asymmetric signatures (Ed25519), so
+//     that gate devices hold only a public verification key and a stolen
+//     device leaks nothing that would let an attacker mint tickets.
+//
+// The offline verification WORKFLOW being demonstrated is identical under
+// either key-management regime. Only the provisioning differs.
 // ---------------------------------------------------------------------------
 
 /**
  * Shared secret used to sign and verify tickets.
- * Named MOCK_ to signal that this is a stand-in for a securely provisioned key
- * — see limitation (2) above.
+ *
+ * See the limitation note above: in this prototype the key necessarily ships
+ * to the client. It is isolated here as a single named constant so that a
+ * deployment can replace it with a securely provisioned value without touching
+ * the signing logic.
  */
-const MOCK_SECRET_KEY = 'GhanaTBSSecretKey2026';
+const TICKET_SIGNING_KEY = 'GhanaTBSSecretKey2026';
+
+// --- SHA-256, implemented from first principles ----------------------------
+// Reference: FIPS PUB 180-4, Secure Hash Standard (NIST, 2015), section 6.2.
+
+/**
+ * The 64 round constants of SHA-256: the first 32 bits of the fractional parts
+ * of the cube roots of the first 64 primes.
+ */
+const SHA256_K = new Uint32Array([
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+]);
+
+/** Rotate a 32-bit word right by n bits. */
+const rotr32 = (x: number, n: number): number => ((x >>> n) | (x << (32 - n))) >>> 0;
+
+/**
+ * Encodes a string as UTF-8 bytes.
+ *
+ * Written explicitly rather than using TextEncoder so that the byte sequence
+ * being hashed is visible in this file. Ghanaian passenger names may carry
+ * characters outside ASCII, so multi-byte sequences and surrogate pairs are
+ * both handled; hashing the wrong bytes would make a ticket unverifiable on a
+ * device with a different string representation.
+ */
+const utf8Bytes = (input: string): Uint8Array => {
+  const out: number[] = [];
+  for (let i = 0; i < input.length; i++) {
+    const code = input.charCodeAt(i);
+    if (code < 0x80) {
+      out.push(code);
+    } else if (code < 0x800) {
+      out.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+    } else if (code >= 0xd800 && code <= 0xdbff) {
+      // High surrogate. It is only half a character: it must be followed by a
+      // low surrogate (0xDC00-0xDFFF) to form one code point above the Basic
+      // Multilingual Plane. The pairing is checked BEFORE consuming the next
+      // character, because a high surrogate followed by an ordinary character
+      // is malformed input, and consuming that character unconditionally would
+      // silently drop it from the signed payload.
+      const low = i + 1 < input.length ? input.charCodeAt(i + 1) : 0;
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        i++; // consume the low surrogate, which belongs to this code point
+        const cp = 0x10000 + ((code & 0x3ff) << 10) + (low & 0x3ff);
+        out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+      } else {
+        // Unpaired high surrogate: emit U+FFFD REPLACEMENT CHARACTER.
+        out.push(0xef, 0xbf, 0xbd);
+      }
+    } else if (code >= 0xdc00 && code <= 0xdfff) {
+      // Unpaired low surrogate (a low surrogate not preceded by a high one).
+      out.push(0xef, 0xbf, 0xbd);
+    } else {
+      out.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+    }
+  }
+  return new Uint8Array(out);
+};
+
+/**
+ * Computes the SHA-256 digest of a byte array, returning 32 raw bytes.
+ *
+ * The four stages follow FIPS 180-4 directly:
+ *   1. PAD        — append 0x80, then zeros, then the message length in bits
+ *                   as a 64-bit big-endian integer, so the total is a multiple
+ *                   of 64 bytes.
+ *   2. SCHEDULE   — expand each 64-byte block into 64 32-bit words.
+ *   3. COMPRESS   — run 64 rounds mixing the eight working variables.
+ *   4. ACCUMULATE — add the working variables back into the running state.
+ */
+const sha256 = (input: Uint8Array): Uint8Array => {
+  // Initial state: first 32 bits of the fractional parts of the square roots
+  // of the first eight primes.
+  const H = new Uint32Array([
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+  ]);
+
+  // --- STAGE 1: PADDING ---
+  // The length in bits occupies a 64-bit field. Round the padded length up to
+  // the next multiple of 64 bytes, leaving room for the 0x80 marker byte and
+  // the 8 length bytes.
+  const bitLength = input.length * 8;
+  const paddedLength = (input.length + 9 + 63) & ~63;
+  const msg = new Uint8Array(paddedLength);
+  msg.set(input);
+  msg[input.length] = 0x80;
+
+  const view = new DataView(msg.buffer);
+  // Split the bit length across two 32-bit words, since JavaScript bitwise
+  // operators are 32-bit and would truncate a large length.
+  view.setUint32(paddedLength - 8, Math.floor(bitLength / 0x100000000));
+  view.setUint32(paddedLength - 4, bitLength >>> 0);
+
+  const w = new Uint32Array(64);
+
+  for (let offset = 0; offset < paddedLength; offset += 64) {
+    // --- STAGE 2: MESSAGE SCHEDULE ---
+    for (let i = 0; i < 16; i++) {
+      w[i] = view.getUint32(offset + i * 4);
+    }
+    for (let i = 16; i < 64; i++) {
+      const s0 = rotr32(w[i - 15], 7) ^ rotr32(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+      const s1 = rotr32(w[i - 2], 17) ^ rotr32(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+    }
+
+    // --- STAGE 3: COMPRESSION ---
+    let a = H[0], b = H[1], c = H[2], d = H[3];
+    let e = H[4], f = H[5], g = H[6], h = H[7];
+
+    for (let i = 0; i < 64; i++) {
+      const S1 = rotr32(e, 6) ^ rotr32(e, 11) ^ rotr32(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (h + S1 + ch + SHA256_K[i] + w[i]) >>> 0;
+      const S0 = rotr32(a, 2) ^ rotr32(a, 13) ^ rotr32(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (S0 + maj) >>> 0;
+
+      h = g; g = f; f = e;
+      e = (d + temp1) >>> 0;
+      d = c; c = b; b = a;
+      a = (temp1 + temp2) >>> 0;
+    }
+
+    // --- STAGE 4: ACCUMULATE ---
+    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0;
+    H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0;
+    H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+  }
+
+  // Serialise the eight state words as 32 big-endian bytes.
+  const digest = new Uint8Array(32);
+  const digestView = new DataView(digest.buffer);
+  for (let i = 0; i < 8; i++) {
+    digestView.setUint32(i * 4, H[i]);
+  }
+  return digest;
+};
+
+/**
+ * Computes HMAC-SHA256 over a message with a secret key (RFC 2104).
+ *
+ * The construction is  H((K XOR opad) || H((K XOR ipad) || message)).
+ *
+ * The two padding constants and the nested hashing are what distinguish a real
+ * MAC from naively appending a key to a message. Because the key is mixed into
+ * both an inner and an outer hash, an attacker who observes a valid
+ * (message, tag) pair cannot extend the message and compute a matching tag,
+ * which is exactly the length-extension attack that defeats H(key || message).
+ */
+const hmacSha256 = (key: string, message: string): Uint8Array => {
+  const BLOCK_SIZE = 64; // SHA-256 operates on 64-byte blocks
+
+  // Normalise the key to exactly one block: hash it if too long, zero-pad if short.
+  let keyBytes = utf8Bytes(key);
+  if (keyBytes.length > BLOCK_SIZE) {
+    keyBytes = sha256(keyBytes);
+  }
+  const paddedKey = new Uint8Array(BLOCK_SIZE);
+  paddedKey.set(keyBytes);
+
+  const inner = new Uint8Array(BLOCK_SIZE);
+  const outer = new Uint8Array(BLOCK_SIZE);
+  for (let i = 0; i < BLOCK_SIZE; i++) {
+    inner[i] = paddedKey[i] ^ 0x36; // ipad
+    outer[i] = paddedKey[i] ^ 0x5c; // opad
+  }
+
+  // Inner hash: H((K XOR ipad) || message)
+  const messageBytes = utf8Bytes(message);
+  const innerInput = new Uint8Array(BLOCK_SIZE + messageBytes.length);
+  innerInput.set(inner);
+  innerInput.set(messageBytes, BLOCK_SIZE);
+  const innerDigest = sha256(innerInput);
+
+  // Outer hash: H((K XOR opad) || innerDigest)
+  const outerInput = new Uint8Array(BLOCK_SIZE + innerDigest.length);
+  outerInput.set(outer);
+  outerInput.set(innerDigest, BLOCK_SIZE);
+  return sha256(outerInput);
+};
+
+/** Renders raw bytes as an uppercase hexadecimal string. */
+const toHex = (bytes: Uint8Array): string => {
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) {
+    out += bytes[i].toString(16).padStart(2, '0');
+  }
+  return out.toUpperCase();
+};
 
 /**
  * The complete data structure encoded into a ticket's QR code.
@@ -391,7 +622,7 @@ export interface QRData {
 }
 
 /**
- * Computes the signature for a set of ticket details.
+ * Computes the HMAC-SHA256 signature for a set of ticket details.
  *
  * Used in two places, and the symmetry between them is the whole point of the
  * scheme:
@@ -401,6 +632,16 @@ export interface QRData {
  * The function is deterministic — identical inputs always yield an identical
  * signature — which is what allows the gate to verify without contacting the
  * server that issued the ticket.
+ *
+ * FIELD SEPARATION: the four fields are joined with the unit separator
+ * character (U+001F) rather than a hyphen. Hyphens occur inside bus numbers
+ * and passenger names, which would make a hyphen-joined encoding ambiguous:
+ * the field sets ("A-1", 2) and ("A", "1-2") would serialise identically and
+ * therefore share a signature, letting one ticket's tag authenticate another's
+ * details. The unit separator cannot be typed into the booking form, so every
+ * field boundary is unambiguous.
+ *
+ * @returns a 64-character uppercase hex string (a 256-bit tag).
  */
 export const generateOfflineSignature = (
   ticketId: string,
@@ -408,30 +649,9 @@ export const generateOfflineSignature = (
   seatNumber: number,
   busNumber: string
 ): string => {
-  // All four ticket fields are concatenated with the secret key appended.
-  // Including the key is what prevents forgery: an attacker who does not know
-  // the key cannot produce a signature that will verify, even though they can
-  // read the ticket contents.
-  const payload = `${ticketId}-${passengerName}-${seatNumber}-${busNumber}-${MOCK_SECRET_KEY}`;
-
-  // djb2-style rolling hash. For each character:
-  //   hash = hash * 31 + charCode
-  // written as (hash << 5) - hash, since (h * 32) - h == h * 31 and bit shifts
-  // are the conventional formulation of this algorithm.
-  let hash = 0;
-  for (let i = 0; i < payload.length; i++) {
-    const char = payload.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    // JavaScript numbers are 64-bit floats, so this forces the accumulator back
-    // into a 32-bit signed integer on every iteration. Without it the hash
-    // would lose precision and stop being reproducible across devices.
-    hash = hash & hash;
-  }
-
-  // Math.abs() discards the sign (the accumulator can go negative through
-  // overflow) and the result is rendered as uppercase hex for a compact,
-  // human-readable signature suitable for printing on a ticket.
-  return Math.abs(hash).toString(16).toUpperCase();
+  const SEPARATOR = '\u001F';
+  const payload = [ticketId, passengerName, String(seatNumber), busNumber].join(SEPARATOR);
+  return toHex(hmacSha256(TICKET_SIGNING_KEY, payload));
 };
 
 /**
