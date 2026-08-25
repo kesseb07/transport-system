@@ -487,7 +487,9 @@ export const addBooking = async (booking: Booking): Promise<void> => {
  * cryptographic signature proves a ticket is genuine, but only this flag
  * records that it has already been redeemed.
  *
- * @param validatedAt Human-readable check-in time, recorded by the gate device.
+ * @param validatedAt ISO 8601 check-in instant, recorded by the gate device.
+ *                    The column is `timestamptz`, so a locale-formatted string
+ *                    is rejected. Formatting for display happens at render.
  */
 export const validateBooking = async (bookingId: string, validatedAt: string): Promise<void> => {
   if (supabase) {

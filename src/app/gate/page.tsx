@@ -61,6 +61,20 @@ export default function GateValidationPortal() {
   // Running list of passengers checked in at this gate.
   const [offlineValidatedList, setOfflineValidatedList] = useState<Booking[]>([]);
 
+  /**
+   * Renders a stored check-in instant as a readable clock time.
+   *
+   * Check-in times are persisted as ISO 8601 so the database accepts them, so
+   * the human formatting happens here instead. Records written by an earlier
+   * build hold a locale string that Date cannot parse, and those are shown
+   * unchanged rather than as "Invalid Date".
+   */
+  const formatCheckInTime = (value?: string): string => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? value : parsed.toLocaleTimeString();
+  };
+
   /** Refreshes the check-in list, keeping only tickets already validated. */
   const loadValidated = async () => {
     const list = await getBookings();
@@ -112,7 +126,7 @@ export default function GateValidationPortal() {
           if (bookings[ticketIdx].isValidated) {
             setValidationResult({
               success: false,
-              message: `Ticket already verified at ${bookings[ticketIdx].validatedAt}. Warning: Duplicate scan attempt detected.`,
+              message: `Ticket already verified at ${formatCheckInTime(bookings[ticketIdx].validatedAt)}. Warning: Duplicate scan attempt detected.`,
               ticketDetails: qrData
             });
             await addAuditLog(
@@ -125,7 +139,15 @@ export default function GateValidationPortal() {
 
           // OUTCOME 1 — VALID, FIRST USE. Mark the ticket redeemed so any
           // subsequent scan of the same ticket is caught as a duplicate.
-          const validatedTimeString = new Date().toLocaleTimeString();
+          // Stored as an ISO 8601 instant. The column is `timestamptz`, which
+          // rejects a locale-formatted string such as "10:30:40 PM" outright
+          // (Postgres error 22007). That rejection used to fail the cloud
+          // write silently and fall back to localStorage, so the boarding was
+          // never recorded centrally: duplicate scans went undetected on every
+          // other device, the operator manifest never left "Pending Gate", and
+          // the regulator's boarding count stayed at zero. Display formatting
+          // belongs at the point of render, not in the stored value.
+          const validatedTimeString = new Date().toISOString();
           await validateBooking(qrData.ticketId, validatedTimeString);
           systemMessage = `Validated Offline: Successfully checked in ${qrData.passengerName} to Seat ${qrData.seatNumber}.`;
         } else {
@@ -339,7 +361,7 @@ export default function GateValidationPortal() {
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Ticket: {item.id} | Seat: {item.seatNumber}</p>
                   </div>
                   <span style={{ fontSize: '0.8rem', color: 'var(--glow-green)', fontWeight: 600 }}>
-                    Checked In {item.validatedAt ? `@ ${item.validatedAt}` : ''}
+                    Checked In {item.validatedAt ? `@ ${formatCheckInTime(item.validatedAt)}` : ''}
                   </span>
                 </div>
               ))}
