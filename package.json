@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^2.43.4",
     "@types/qrcode": "^1.5.6",
     "html2canvas": "^1.4.1",
+    "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "next": "16.2.9",

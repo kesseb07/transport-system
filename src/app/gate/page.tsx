@@ -39,13 +39,20 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getBookings, validateBooking, addAuditLog, Booking } from '../../services/database';
 import { verifyOfflineTicket, QRData } from '../../services/algorithms';
+import { Html5Qrcode } from 'html5-qrcode';
 
 export default function GateValidationPortal() {
   // Raw scanned/pasted QR payload awaiting verification.
   const [ticketInput, setTicketInput] = useState('');
+
+  // Camera scanner state
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [lastScannedPayload, setLastScannedPayload] = useState<string | null>(null);
+  const qrScannerRef = useRef<Html5Qrcode | null>(null);
 
   /**
    * Outcome of the most recent scan. Null before any scan has been performed.
@@ -62,12 +69,37 @@ export default function GateValidationPortal() {
   const [offlineValidatedList, setOfflineValidatedList] = useState<Booking[]>([]);
 
   /**
+   * Play an audible confirmation beep on successful scan
+   */
+  const playBeep = (isSuccess: boolean) => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (isSuccess) {
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.1); // D6
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.25);
+      } else {
+        osc.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.35);
+      }
+    } catch {
+      // Audio context might be restricted before user gesture; safe to ignore
+    }
+  };
+
+  /**
    * Renders a stored check-in instant as a readable clock time.
-   *
-   * Check-in times are persisted as ISO 8601 so the database accepts them, so
-   * the human formatting happens here instead. Records written by an earlier
-   * build hold a locale string that Date cannot parse, and those are shown
-   * unchanged rather than as "Invalid Date".
    */
   const formatCheckInTime = (value?: string): string => {
     if (!value) return '';
@@ -83,25 +115,29 @@ export default function GateValidationPortal() {
 
   useEffect(() => {
     loadValidated();
+
+    // Cleanup scanner if unmounted
+    return () => {
+      if (qrScannerRef.current && qrScannerRef.current.isScanning) {
+        qrScannerRef.current.stop().catch(() => {});
+      }
+    };
   }, []);
 
   /**
-   * Verifies a scanned ticket and checks the passenger in.
-   *
-   * The whole method is wrapped in try/catch because JSON.parse() throws on
-   * malformed input — the catch block handles outcome 4 (a payload that is not
-   * a ticket at all, such as an unrelated QR code).
+   * Core Verification Logic.
+   * Can be called by manual form submit or directly from the camera scanner.
    */
-  const handleValidate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ticketInput.trim()) {
+  const processValidation = async (rawInput: string) => {
+    const trimmedInput = rawInput.trim();
+    if (!trimmedInput) {
       alert('Please paste or scan a ticket code.');
       return;
     }
 
     try {
       // Decode the scanned payload into ticket fields.
-      const qrData: QRData = JSON.parse(ticketInput);
+      const qrData: QRData = JSON.parse(trimmedInput);
 
       // THE CORE OFFLINE CHECK. Recomputes the signature from the scanned
       // details and compares it to the one the ticket carries. Requires no
@@ -118,12 +154,8 @@ export default function GateValidationPortal() {
 
         if (ticketIdx !== -1) {
           // OUTCOME 2 — DUPLICATE SCAN.
-          // The signature is valid but this ticket was already redeemed,
-          // indicating a photocopied or forwarded ticket. Detecting this
-          // requires local state, which is why the signature check alone is
-          // not sufficient. The check-in is refused and a security event is
-          // logged for the regulator.
           if (bookings[ticketIdx].isValidated) {
+            playBeep(false);
             setValidationResult({
               success: false,
               message: `Ticket already verified at ${formatCheckInTime(bookings[ticketIdx].validatedAt)}. Warning: Duplicate scan attempt detected.`,
@@ -137,29 +169,16 @@ export default function GateValidationPortal() {
             return;
           }
 
-          // OUTCOME 1 — VALID, FIRST USE. Mark the ticket redeemed so any
-          // subsequent scan of the same ticket is caught as a duplicate.
-          // Stored as an ISO 8601 instant. The column is `timestamptz`, which
-          // rejects a locale-formatted string such as "10:30:40 PM" outright
-          // (Postgres error 22007). That rejection used to fail the cloud
-          // write silently and fall back to localStorage, so the boarding was
-          // never recorded centrally: duplicate scans went undetected on every
-          // other device, the operator manifest never left "Pending Gate", and
-          // the regulator's boarding count stayed at zero. Display formatting
-          // belongs at the point of render, not in the stored value.
+          // OUTCOME 1 — VALID, FIRST USE.
           const validatedTimeString = new Date().toISOString();
           await validateBooking(qrData.ticketId, validatedTimeString);
           systemMessage = `Validated Offline: Successfully checked in ${qrData.passengerName} to Seat ${qrData.seatNumber}.`;
         } else {
-          // OUTCOME 1b — VALID, BUT UNKNOWN TO THIS DEVICE.
-          // The signature verifies, yet no matching booking exists locally.
-          // This is the true offline case: a ticket issued while this device
-          // was disconnected. The passenger is admitted on the strength of the
-          // signature alone — precisely the resilience the design aims for.
-          // The booking record would reconcile on the next synchronisation.
+          // OUTCOME 1b — VALID, BUT UNKNOWN TO THIS DEVICE (offline sync).
           systemMessage = `Validated Offline: Signature matches cryptographic secret keys. Passenger verified (un-synced database log created).`;
         }
 
+        playBeep(true);
         setValidationResult({
           success: true,
           message: systemMessage,
@@ -175,10 +194,7 @@ export default function GateValidationPortal() {
 
       } else {
         // OUTCOME 3 — SIGNATURE MISMATCH (forged or altered ticket).
-        // The recomputed signature does not match the one presented, so either
-        // the ticket was fabricated without the secret key, or a genuine ticket
-        // was edited after issue — changing even a single character of the
-        // passenger name or seat number produces a different signature.
+        playBeep(false);
         setValidationResult({
           success: false,
           message: 'Verification Failed: Cryptographic signature mismatch. Potential forged or altered ticket payload.',
@@ -188,14 +204,12 @@ export default function GateValidationPortal() {
         await addAuditLog(
           'system',
           'security_signature_mismatch',
-          `Security Alert: Ticket signature mismatch detected on validation input: ${ticketInput.slice(0, 100)}...`
+          `Security Alert: Ticket signature mismatch detected on validation input: ${trimmedInput.slice(0, 100)}...`
         );
       }
-    } catch (err) {
+    } catch {
       // OUTCOME 4 — MALFORMED PAYLOAD.
-      // JSON.parse() threw, so the input was never a ticket: an unrelated QR
-      // code, a truncated scan, or arbitrary text. No audit entry is written
-      // here, since this indicates a scanning error rather than an attack.
+      playBeep(false);
       setValidationResult({
         success: false,
         message: 'Invalid Scan Payload: Input does not match the transit ticket structural template.'
@@ -203,28 +217,86 @@ export default function GateValidationPortal() {
     }
   };
 
+  /** Form submit wrapper */
+  const handleValidate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await processValidation(ticketInput);
+  };
+
+  /** Starts the live camera scanner */
+  const startCameraScanner = async () => {
+    setCameraError(null);
+    setIsCameraActive(true);
+
+    // Give DOM time to render the scanner container
+    setTimeout(async () => {
+      try {
+        if (!qrScannerRef.current) {
+          qrScannerRef.current = new Html5Qrcode('qr-reader-container');
+        }
+
+        const qrCodeSuccessCallback = async (decodedText: string) => {
+          // Prevent rapid double-triggering on the exact same scan frame
+          if (decodedText === lastScannedPayload) return;
+          setLastScannedPayload(decodedText);
+          setTicketInput(decodedText);
+
+          // Automatically process verification
+          await processValidation(decodedText);
+
+          // Auto-clear last scanned latch after 2.5 seconds to allow subsequent scans
+          setTimeout(() => setLastScannedPayload(null), 2500);
+        };
+
+        const config = {
+          fps: 15,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
+        };
+
+        await qrScannerRef.current.start(
+          { facingMode: 'environment' },
+          config,
+          qrCodeSuccessCallback,
+          () => {} // Silent on non-detect frames
+        );
+      } catch (err: unknown) {
+        console.error('Camera initialization error:', err);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        setCameraError(
+          errMsg.includes('Permission') || errMsg.includes('NotAllowedError')
+            ? 'Camera access permission was denied. Please allow camera access in your browser settings.'
+            : 'Could not access device camera. Please make sure a camera is attached and not in use by another app.'
+        );
+        setIsCameraActive(false);
+      }
+    }, 150);
+  };
+
+  /** Stops the live camera scanner */
+  const stopCameraScanner = async () => {
+    if (qrScannerRef.current) {
+      try {
+        if (qrScannerRef.current.isScanning) {
+          await qrScannerRef.current.stop();
+        }
+      } catch (err) {
+        console.error('Failed to stop camera scanner:', err);
+      }
+    }
+    setIsCameraActive(false);
+    setCameraError(null);
+  };
+
   /** Resets the scanner for the next passenger in the queue. */
   const clearInput = () => {
     setTicketInput('');
     setValidationResult(null);
+    setLastScannedPayload(null);
   };
 
   /**
    * Loads a sample ticket for demonstration purposes.
-   *
-   * NOTE FOR EXAMINERS: despite the button label "Load Mock Valid QR", this
-   * sample does NOT pass verification. Its hard-coded signature ('1B3F9A7D')
-   * is not the HMAC-SHA256 tag these details actually produce (the correct
-   * value is
-   * '8C040B3A57D60BE3D1E618EFEF099E1C98CDB910C31C7D84D0555974E778CFBC'),
-   * so scanning it always yields outcome 3, signature mismatch.
-   *
-   * It is therefore a useful demonstration of the FORGED-ticket path, and can
-   * be read as illustrating exactly the attack the scheme defends against: a
-   * plausible-looking ticket carrying a signature its bearer could not compute.
-   *
-   * To demonstrate a SUCCESSFUL validation, book a ticket through the commuter
-   * portal and paste that booking's genuine QR payload into the scan box.
    */
   const loadSimulatedTicket = () => {
     const validMockTicket = {
@@ -234,10 +306,9 @@ export default function GateValidationPortal() {
       busNumber: "VIP-843-26",
       signature: "1B3F9A7D"
     };
-    // Pretty-printed with 2-space indentation so the payload structure is
-    // legible in the text area.
     setTicketInput(JSON.stringify(validMockTicket, null, 2));
   };
+
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
@@ -254,17 +325,81 @@ export default function GateValidationPortal() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
         
         {/* ================= SCANNER INPUT =================
-            Stands in for the camera of a physical handheld scanner. */}
+            Provides both live camera scanning and manual payload input. */}
         <section className="glass-panel" style={{ padding: '24px' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Scan Input</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>Gate Scanner</h2>
+            <button
+              type="button"
+              onClick={isCameraActive ? stopCameraScanner : startCameraScanner}
+              style={{
+                background: isCameraActive ? 'rgba(239, 68, 68, 0.2)' : 'linear-gradient(135deg, var(--primary) 0%, #d97706 100%)',
+                color: '#fff',
+                border: isCameraActive ? '1px solid var(--glow-red)' : 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              {isCameraActive ? '⏹ Stop Camera' : '📷 Open Camera Scanner'}
+            </button>
+          </div>
+
+          {/* Camera Error Message */}
+          {cameraError && (
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid var(--glow-red)',
+              borderRadius: '8px',
+              padding: '12px',
+              marginBottom: '16px',
+              fontSize: '0.85rem',
+              color: '#fca5a5'
+            }}>
+              ⚠️ {cameraError}
+            </div>
+          )}
+
+          {/* Live Video Camera Viewfinder */}
+          {isCameraActive && (
+            <div style={{
+              marginBottom: '20px',
+              padding: '12px',
+              background: 'rgba(0, 0, 0, 0.5)',
+              borderRadius: '12px',
+              border: '2px solid var(--accent-gold)',
+              textAlign: 'center'
+            }}>
+              <p style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', marginBottom: '8px', fontWeight: 600 }}>
+                🎯 Point camera directly at the passenger's QR code (Auto-scans & verifies)
+              </p>
+              <div
+                id="qr-reader-container"
+                style={{
+                  width: '100%',
+                  maxWidth: '360px',
+                  margin: '0 auto',
+                  borderRadius: '8px',
+                  overflow: 'hidden'
+                }}
+              />
+            </div>
+          )}
           
           <form onSubmit={handleValidate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Paste Scanned QR Payload String:
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Scanned QR Payload String:</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Auto-populated on camera scan</span>
               </label>
               <textarea
-                rows={6}
+                rows={5}
                 value={ticketInput}
                 onChange={(e) => setTicketInput(e.target.value)}
                 placeholder='{"ticketId":"...", "passengerName":"...", "signature":"..."}'
