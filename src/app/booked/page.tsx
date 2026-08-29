@@ -27,8 +27,98 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getBookings, getSchedules, ROUTES, OPERATORS, Booking, Schedule } from '../../services/database';
+import { generateOfflineSignature } from '../../services/algorithms';
 import html2canvas from 'html2canvas'; // renders a DOM element to a canvas image
 import jsPDF from 'jspdf';             // builds a PDF document in the browser
+import QRCode from 'qrcode';
+
+/**
+ * Renders the visual 2D QR Code image containing the cryptographic ticket payload.
+ * Provides a copy button so users can easily test the gate offline scanner.
+ */
+function QRCodeDisplay({ payload, ticketId }: { payload: string; ticketId: string }) {
+  const [qrUrl, setQrUrl] = useState<string>('');
+  const [copied, setCopied] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!payload) return;
+    QRCode.toDataURL(payload, {
+      width: 220,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      },
+      errorCorrectionLevel: 'M'
+    })
+      .then(url => setQrUrl(url))
+      .catch(err => console.error('QR code generation error:', err));
+  }, [payload]);
+
+  const copyPayload = () => {
+    navigator.clipboard.writeText(payload);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '16px',
+      background: 'rgba(255, 255, 255, 0.03)',
+      borderRadius: '8px',
+      border: '1px solid var(--border-glass)',
+      margin: '16px 0 20px 0'
+    }}>
+      <div style={{
+        background: '#ffffff',
+        padding: '12px',
+        borderRadius: '8px',
+        display: 'inline-flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.4)'
+      }}>
+        {qrUrl ? (
+          <img
+            src={qrUrl}
+            alt={`Scannable QR Code for Ticket ${ticketId}`}
+            style={{ width: '150px', height: '150px', display: 'block' }}
+          />
+        ) : (
+          <div style={{ width: '150px', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontSize: '0.8rem' }}>
+            Generating QR Code...
+          </div>
+        )}
+      </div>
+      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '10px', marginBottom: '8px', textAlign: 'center' }}>
+        Scan at boarding gate for offline cryptographic check-in
+      </p>
+      <button
+        onClick={copyPayload}
+        type="button"
+        data-html2canvas-ignore="true"
+        style={{
+          background: 'rgba(255, 255, 255, 0.07)',
+          border: '1px solid var(--border-glass)',
+          color: copied ? 'var(--glow-green)' : 'var(--accent-gold)',
+          padding: '6px 12px',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          transition: 'all 0.2s'
+        }}
+      >
+        {copied ? '✓ Copied QR Payload to Clipboard' : '📋 Copy Scannable QR Payload (for Gate Scanner)'}
+      </button>
+    </div>
+  );
+}
 
 /**
  * Inner component holding the actual page content.
@@ -199,6 +289,21 @@ function TicketContent() {
         {tickets.map(ticket => {
           const route = getRouteDetails(schedule.routeId);
           const operator = getOperatorDetails(schedule.operatorId);
+
+          // Ensure valid offline signature payload exists
+          const effectivePayload = ticket.qrPayload || JSON.stringify({
+            ticketId: ticket.id,
+            passengerName: ticket.passengerName,
+            seatNumber: ticket.seatNumber,
+            busNumber: schedule.busNumber,
+            signature: generateOfflineSignature(
+              ticket.id,
+              ticket.passengerName,
+              ticket.seatNumber,
+              schedule.busNumber
+            )
+          });
+
           return (
             // The id attribute is what the PNG/PDF capture functions target,
             // so each pass can be saved individually.
@@ -260,6 +365,9 @@ function TicketContent() {
                     <p style={{ fontSize: '0.85rem', color: 'var(--glow-green)', fontWeight: 700 }}>PAID ({ticket.momoProvider})</p>
                   </div>
                 </div>
+
+                {/* Scannable 2D QR Code Matrix */}
+                <QRCodeDisplay payload={effectivePayload} ticketId={ticket.id} />
               </div>
 
               {/* Download controls. data-html2canvas-ignore excludes this row
@@ -301,3 +409,4 @@ export default function BookedPage() {
     </Suspense>
   );
 }
+
