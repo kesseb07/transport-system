@@ -385,6 +385,142 @@ export const saveSchedule = async (schedule: Schedule): Promise<void> => {
   }
 };
 
+/**
+ * Whether the `reservations` table from migration 0001 exists.
+ *
+ * null  = not yet determined
+ * true  = present, so the composite primary key arbitrates
+ * false = absent, so reserveSeats() goes straight to compare-and-set
+ *
+ * Cached per session purely to avoid repeating a request that is known to fail.
+ */
+let reservationsTablePresent: boolean | null = null;
+
+/** Outcome of an attempt to claim seats. `taken` lists the seats that were lost. */
+export type ReservationResult =
+  | { ok: true; reservedSeats: number[] }
+  | { ok: false; taken: number[]; reservedSeats: number[] };
+
+/**
+ * Claims one or more seats on a bus, atomically.
+ *
+ * WHY THIS FUNCTION EXISTS
+ * ------------------------
+ * Section 4.4 of the evaluative essay reports that the previous approach, of
+ * reading `reservedSeats`, appending, and writing the whole array back, loses
+ * a reservation in 1,000 of 1,000 simultaneous attempts. The read and the
+ * write are two separate journeys to the server, and another passenger can
+ * complete a booking in between. No client-side check closes that gap, because
+ * the check is on the wrong side of the network.
+ *
+ * The remedy is to make the database refuse the conflict. Two mechanisms are
+ * implemented, and the stronger is preferred automatically:
+ *
+ *   TIER 1, the `reservations` table (migration 0001).
+ *     One row per seat per bus, with (schedule_id, seat_number) as a composite
+ *     primary key. Both passengers insert; PostgreSQL accepts one and raises
+ *     23505 for the other. The loser is told the seat has gone.
+ *
+ *   TIER 2, compare-and-set, used when the migration has not been applied.
+ *     The update carries a guard, `.eq('reserved_seats', <the array we read>)`,
+ *     so it modifies the row only if nobody else has touched it since. If the
+ *     guard matches nothing, the seat map is re-read and the attempt retried.
+ *     This closes the race without any schema change, which is why it is safe
+ *     to ship before the migration is run.
+ *
+ * Tier 2 is genuinely safe rather than merely better: the guarded update is a
+ * single statement, so the comparison and the write happen together inside one
+ * transaction rather than either side of a round trip.
+ */
+export const reserveSeats = async (
+  schedule: Schedule,
+  seats: number[]
+): Promise<ReservationResult> => {
+  // Offline tier. A single browser tab has no concurrent writer, so the
+  // localStorage path only needs to reject seats already taken locally.
+  if (!supabase) {
+    const current = schedule.reservedSeats;
+    const clash = seats.filter(s => current.includes(s));
+    if (clash.length) return { ok: false, taken: clash, reservedSeats: current };
+    const next = [...current, ...seats].sort((a, b) => a - b);
+    await saveSchedule({ ...schedule, reservedSeats: next });
+    return { ok: true, reservedSeats: next };
+  }
+
+  // ---- TIER 1: let the composite primary key arbitrate ----
+  // Remembered for the session so a deployment without the migration does not
+  // issue a doomed request, and a 404, on every single booking.
+  const { error } = reservationsTablePresent === false
+    ? { error: { code: 'SKIP' } as { code: string } }
+    : await supabase
+        .from('reservations')
+        .insert(seats.map(seat => ({ schedule_id: schedule.id, seat_number: seat })));
+
+  if (!error) reservationsTablePresent = true;
+  else if (error.code !== '23505' && error.code !== 'SKIP') reservationsTablePresent = false;
+
+  if (!error) {
+    // The trigger in migration 0001 has already rebuilt the array, so read it
+    // back rather than assuming what it now contains.
+    const { data } = await supabase
+      .from('schedules')
+      .select('reserved_seats')
+      .eq('id', schedule.id)
+      .single();
+    const next = data?.reserved_seats ?? [...schedule.reservedSeats, ...seats];
+    return { ok: true, reservedSeats: [...next].sort((a, b) => a - b) };
+  }
+
+  // 23505 is unique_violation: at least one of these seats was claimed first.
+  if (error.code === '23505') {
+    const { data } = await supabase
+      .from('reservations')
+      .select('seat_number')
+      .eq('schedule_id', schedule.id)
+      .in('seat_number', seats);
+    const taken = (data ?? []).map(r => r.seat_number);
+    const { data: sched } = await supabase
+      .from('schedules').select('reserved_seats').eq('id', schedule.id).single();
+    return { ok: false, taken, reservedSeats: sched?.reserved_seats ?? schedule.reservedSeats };
+  }
+
+  // Any other error means the table is absent, i.e. migration 0001 has not
+  // been run yet. Fall through to the compare-and-set tier rather than fail.
+
+  // ---- TIER 2: guarded update, retried on a stale guard ----
+  let known = schedule.reservedSeats;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const clash = seats.filter(s => known.includes(s));
+    if (clash.length) return { ok: false, taken: clash, reservedSeats: known };
+
+    const next = [...known, ...seats].sort((a, b) => a - b);
+
+    // The guard has to be written as a PostgreSQL array literal, `{1,2,3}`.
+    // Passing a JavaScript array to .eq() serialises it as `[1,2,3]`, which
+    // PostgREST rejects with 400 rather than treating as an array comparison,
+    // so .filter() is used with the literal built by hand.
+    const guard = `{${known.join(',')}}`;
+
+    const { data, error: casError } = await supabase
+      .from('schedules')
+      .update({ reserved_seats: next })
+      .eq('id', schedule.id)
+      .filter('reserved_seats', 'eq', guard)   // proceed only if unchanged
+      .select('reserved_seats');
+
+    if (!casError && data && data.length > 0) {
+      return { ok: true, reservedSeats: next };
+    }
+
+    // Guard matched nothing, so somebody else wrote first. Re-read and retry.
+    const { data: fresh } = await supabase
+      .from('schedules').select('reserved_seats').eq('id', schedule.id).single();
+    known = fresh?.reserved_seats ?? known;
+  }
+
+  return { ok: false, taken: seats, reservedSeats: known };
+};
+
 // ===========================================================================
 // BOOKING ACCESS
 // ===========================================================================

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-08-29T11:28:47.853Z",
+    "generatedAt": "2026-08-30T18:35:50.389Z",
     "node": "v24.13.1",
     "platform": "win32 x64"
   },
@@ -31,11 +31,11 @@
       }
     },
     "latencyUs": {
-      "mean": 29.7432315,
-      "median": 13.1,
-      "p95": 18.8
+      "mean": 17.0793915,
+      "median": 12.4,
+      "p95": 17.3
     },
-    "routesPerSecond": 33621.09460096829,
+    "routesPerSecond": 58550.095300526365,
     "iterations": 200000,
     "pathTable": [
       {

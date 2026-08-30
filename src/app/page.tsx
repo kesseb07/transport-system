@@ -31,6 +31,7 @@ import {
   Booking,
   getSchedules,
   saveSchedule,
+  reserveSeats,
   addBooking,
   addAuditLog
 } from '../services/database';
@@ -79,6 +80,8 @@ export default function CommuterPortal() {
 
   // --- INTERFACE STATE ----------------------------------------------------
   const [isProcessing, setIsProcessing] = useState(false);   // full-screen spinner during ticket issue
+  // Set when a seat is lost to another passenger between selection and booking.
+  const [bookingError, setBookingError] = useState<string | null>(null);
   const [showUSSDModal, setShowUSSDModal] = useState(false); // simulated payment authorisation prompt
   const [pinCode, setPinCode] = useState('');                // reserved for a future PIN entry step; currently unused
 
@@ -139,6 +142,10 @@ export default function CommuterPortal() {
     // disabled in the markup, but this check protects the state directly.
     if (selectedSchedule?.reservedSeats.includes(seat)) return;
 
+    // Any previous "seat was just taken" notice no longer applies once the
+    // passenger starts choosing again.
+    setBookingError(null);
+
     // Toggle: remove if already chosen, otherwise append.
     setSelectedSeats(prev => prev.includes(seat) ? prev.filter(s => s !== seat) : [...prev, seat]);
   };
@@ -193,7 +200,33 @@ export default function CommuterPortal() {
     const generatedTickets: Booking[] = [];
     // Copy the existing reservations rather than mutating state directly —
     // React state must be treated as immutable.
-    const newReservedSeats = [...selectedSchedule.reservedSeats];
+    // ---- Claim the seats FIRST, before anything is issued to the passenger.
+    //
+    // The previous order of operations issued signed tickets and only then
+    // wrote the seat list back, so a passenger who lost the race still walked
+    // away holding a gate-verifiable ticket for a seat the database had given
+    // to somebody else. Claiming first means the worst case is a booking that
+    // never starts, rather than a ticket that should never have existed.
+    //
+    // reserveSeats() is atomic: see services/database.ts for the two tiers.
+    const claim = await reserveSeats(selectedSchedule, selectedSeats);
+
+    if (!claim.ok) {
+      // Somebody else took at least one of these seats in the moments between
+      // this passenger opening the seat map and pressing book. Refresh the map
+      // so the taken seats appear as taken, and say plainly what happened.
+      setSelectedSchedule({ ...selectedSchedule, reservedSeats: claim.reservedSeats });
+      setSelectedSeats(selectedSeats.filter(s => !claim.taken.includes(s)));
+      setBookingError(
+        claim.taken.length === 1
+          ? `Seat ${claim.taken[0]} was just taken by another passenger. Please choose another seat.`
+          : `Seats ${claim.taken.join(', ')} were just taken by other passengers. Please choose again.`
+      );
+      setIsProcessing(false);
+      return;
+    }
+
+    const newReservedSeats = claim.reservedSeats;
 
     // Issue one independent ticket per seat. Each is separately signed and
     // separately scannable, so travelling companions can board individually.
@@ -237,19 +270,14 @@ export default function CommuterPortal() {
       };
 
       await addBooking(newBooking);
-      newReservedSeats.push(seat);
       generatedTickets.push(newBooking);
     }
 
-    // Update the bus so these seats appear taken to every other passenger.
-    // This also raises the leaky bucket's fill level, moving the bus closer to
-    // its dispatch threshold.
-    const updatedSchedule: Schedule = {
-      ...selectedSchedule,
-      reservedSeats: newReservedSeats
-    };
-
-    await saveSchedule(updatedSchedule);
+    // The seats were already committed by reserveSeats() above, and with them
+    // the leaky bucket's fill level, so there is deliberately no write of
+    // reserved_seats here. Repeating the unconditional whole-array update at
+    // this point would reintroduce exactly the race the claim just closed.
+    void newReservedSeats;
 
     // Record the sale in the tamper-evident ledger. This is the regulator's
     // independent evidence of revenue collected, addressing the revenue-leakage
@@ -604,6 +632,23 @@ export default function CommuterPortal() {
                 <option value="AT">ATMoney</option>
               </select>
             </div>
+
+            {/* Shown when another passenger claimed a seat first. The seat map
+                above has already been refreshed, so the taken seat now reads as
+                unavailable and the passenger can simply pick another. */}
+            {bookingError && (
+              <div
+                role="alert"
+                style={{
+                  marginBottom: '1rem', padding: '0.75rem 1rem',
+                  border: '1px solid var(--danger, #b3261e)', borderRadius: '8px',
+                  background: 'color-mix(in srgb, var(--danger, #b3261e) 8%, transparent)',
+                  color: 'var(--danger, #b3261e)', fontSize: '0.9rem'
+                }}
+              >
+                {bookingError}
+              </div>
+            )}
 
             <button onClick={triggerPayment} className="btn-primary" style={{ width: '100%' }}>
               Proceed to Pay GHS {(selectedSchedule.routeId === 'rt-acc-kum' ? 120 : selectedSchedule.routeId === 'rt-acc-tam' ? 240 : 100) * Math.max(1, selectedSeats.length)}.00

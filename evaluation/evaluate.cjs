@@ -496,7 +496,11 @@ function t3TicketIntegrity() {
 function t4Concurrency() {
   heading('T4  CONCURRENCY — SEAT RESERVATION UNDER SIMULTANEOUS BOOKING');
 
-  say('Reproducing the read-modify-write pattern of src/app/page.tsx:196-252.');
+  say('Reproducing the read-modify-write pattern that the commuter portal used');
+  say('BEFORE the fix. Retained as the before-and-after baseline: scenarios A and');
+  say('B are the historical defect, scenario C is the remedy now shipped in');
+  say('services/database.ts reserveSeats(). See evaluation/live-concurrency.cjs');
+  say('for the same comparison run against the hosted database.');
   say('');
 
   /** A stand-in for the schedules row, holding the reserved_seats array. */
@@ -584,10 +588,13 @@ function t4Concurrency() {
   say(`  Reservations lost                           : ${guardedLost}/${TRIALS}`);
 
   say('');
-  say('FINDING: the current write path does not prevent the race. Real-time');
+  say('FINDING: the ORIGINAL write path did not prevent the race. Real-time');
   say('replication propagates changes to subscribers; it does not serialise');
   say('conflicting writes. Preventing the double sale requires a uniqueness');
-  say('constraint or a conditional update at the database.');
+  say('constraint or a conditional update at the database. Scenario C is that');
+  say('remedy, and it is now the shipped behaviour: reserveSeats() claims seats');
+  say('through the reservations table where migration 0001 has been applied, and');
+  say('through a guarded compare-and-set update everywhere else.');
 
   results.t4 = {
     trials: TRIALS,

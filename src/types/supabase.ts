@@ -166,6 +166,35 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          schedule_id: string
+          seat_number: number
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          schedule_id: string
+          seat_number: number
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          schedule_id?: string
+          seat_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       routes: {
         Row: {
           base_fare_ghs: number

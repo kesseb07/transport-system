@@ -1,6 +1,6 @@
 # GhanaTBS — Evaluation Results
 
-Generated 2026-08-29T11:28:47.853Z on Node v24.13.1 (win32 x64).
+Generated 2026-08-30T18:35:50.389Z on Node v24.13.1 (win32 x64).
 
 All figures below are produced by `evaluation/evaluate.cjs`, re-runnable with `npm run evaluate`.
 
@@ -12,10 +12,10 @@ Dijkstra's implementation was checked against an independently written Floyd-War
 |---|---|
 | Node pairs tested | 42 |
 | Agreement with reference | 42/42 |
-| Mean latency (Accra to Tamale) | 29.743 us |
-| Median latency | 13.100 us |
-| 95th percentile latency | 18.800 us |
-| Throughput | 33,621 routes/second |
+| Mean latency (Accra to Tamale) | 17.079 us |
+| Median latency | 12.400 us |
+| 95th percentile latency | 17.300 us |
+| Throughput | 58,550 routes/second |
 
 Selected multi-hop routes, neither of which has a direct edge in the graph:
 
