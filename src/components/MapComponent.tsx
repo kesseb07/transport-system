@@ -91,7 +91,7 @@ const CITIES = {
  * colours, not fares.
  */
 const ROUTES = [
-  { id: 'acc-kum', name: 'Accra to Kumasi', path: [CITIES.Accra, CITIES.Kumasi], color: '#3b82f6' },
+  { id: 'acc-kum', name: 'Accra to Kumasi', path: [CITIES.Accra, CITIES.Kumasi], color: '#b30303' },
   { id: 'acc-tak', name: 'Accra to Takoradi', path: [CITIES.Accra, CITIES.CapeCoast, CITIES.Takoradi], color: '#10b981' },
   { id: 'acc-ho', name: 'Accra to Ho', path: [CITIES.Accra, CITIES.Ho], color: '#f59e0b' },
   { id: 'kum-tam', name: 'Kumasi to Tamale', path: [CITIES.Kumasi, CITIES.Tamale], color: '#8b5cf6' },

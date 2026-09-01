@@ -42,9 +42,9 @@
   --bg-card: rgba(30, 41, 59, 0.7);
   --bg-card-hover: rgba(30, 41, 59, 0.9);
   
-  /* Brand blue, used for primary actions and selected seats. */
-  --primary: #3b82f6;
-  --primary-glow: rgba(59, 130, 246, 0.25);
+  /* Brand red (from logo SVG), used for primary actions and selected seats. */
+  --primary: #b30303;
+  --primary-glow: rgba(179, 3, 3, 0.35);
 
   /* Amber accent, reserved for monetary values — fares, revenue totals — so
      money is visually distinct from other figures throughout the interface. */
@@ -59,7 +59,7 @@
   --text-dim: #64748b;
   
   --border-glass: rgba(255, 255, 255, 0.1);
-  --border-glass-active: rgba(59, 130, 246, 0.5);
+  --border-glass-active: rgba(179, 3, 3, 0.5);
   
   /* Seat map palette. The three seat states — available, booked, selected —
      must stay clearly distinguishable in both themes, since misreading them
@@ -109,8 +109,8 @@
   --bg-card: #f8fafc;
   --bg-card-hover: #f1f5f9;
   
-  --primary: #2563eb;
-  --primary-glow: rgba(37, 99, 235, 0.1);
+  --primary: #b30303;
+  --primary-glow: rgba(179, 3, 3, 0.15);
   
   --accent-gold: #d97706;
   --accent-gold-glow: rgba(217, 119, 6, 0.1);
@@ -120,7 +120,7 @@
   --text-dim: #64748b;
   
   --border-glass: #e2e8f0;
-  --border-glass-active: #2563eb;
+  --border-glass-active: #b30303;
   
   --seat-map-bg: #f1f5f9;
   --seat-available-bg: #ffffff;
