@@ -34,6 +34,8 @@
    -------------------------------------------------------------------------- */
 :root {
   --font-family: 'Outfit', sans-serif;
+  color-scheme: dark;
+  accent-color: #b30303;
   
   --bg-dark: #0f172a;
   --bg-card: rgba(30, 41, 59, 0.7);
@@ -102,6 +104,9 @@
    condition at an open-air Ghanaian terminal.
    -------------------------------------------------------------------------- */
 [data-theme="light"] {
+  color-scheme: light;
+  accent-color: #b30303;
+
   --bg-dark: #ffffff;
   --bg-card: #f8fafc;
   --bg-card-hover: #f1f5f9;
@@ -256,6 +261,11 @@ body {
   border-color: var(--border-glass-active);
 }
 
+::selection {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
 /* Form controls styled globally so every input across the five pages matches
    without needing individual classes. */
 input, select {
@@ -266,7 +276,34 @@ input, select {
   color: var(--text-main);
   font-family: var(--font-family);
   font-size: 0.95rem;
+  accent-color: var(--primary);
   transition: var(--transition-smooth);
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b30303' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+/* Dropdown popup option menu styling */
+option {
+  background-color: var(--header-bg);
+  color: var(--text-main);
+  padding: 10px 12px;
+}
+
+option:checked,
+option:hover,
+option:focus {
+  background-color: var(--primary) !important;
+  color: #ffffff !important;
 }
 
 /* Focus state. The default browser outline is removed, but a visible ring is

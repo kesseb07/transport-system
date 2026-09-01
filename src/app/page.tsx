@@ -671,12 +671,23 @@ export default function CommuterPortal() {
           right: 0,
           bottom: 0,
           background: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 1000
         }}>
-          <div className="glass-panel" style={{ padding: '32px', width: '90%', maxWidth: '400px', textAlign: 'center', border: '1px solid var(--accent-gold)' }}>
+          <div style={{
+            padding: '32px',
+            width: '90%',
+            maxWidth: '400px',
+            textAlign: 'center',
+            background: 'var(--header-bg)',
+            borderRadius: '16px',
+            border: '1px solid var(--accent-gold)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)'
+          }}>
             <div style={{ marginBottom: '24px' }}>
               <div style={{
                 width: '60px',
@@ -754,7 +765,9 @@ export default function CommuterPortal() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(9, 9, 14, 0.8)',
+          background: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -762,10 +775,19 @@ export default function CommuterPortal() {
           zIndex: 2000,
           padding: '24px'
         }}>
-          <div className="glass-panel" style={{ maxWidth: '500px', padding: '32px', textAlign: 'center', background: 'var(--bg-card)' }}>
+          <div style={{
+            maxWidth: '520px',
+            width: '100%',
+            padding: '36px 32px',
+            textAlign: 'center',
+            background: 'var(--header-bg)',
+            borderRadius: '16px',
+            border: '1px solid var(--border-glass)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)'
+          }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '16px' }}>Academic Research Prototype</h2>
             <p style={{ color: 'var(--text-main)', marginBottom: '16px', lineHeight: 1.6 }}>
-              Hello, my name is Kesse. Welcome to <strong>GhanaTBS</strong>. 
+              Hello, my name is Kese. Welcome to <strong>GhanaTBS</strong>. 
             </p>
             <p style={{ color: 'var(--text-muted)', marginBottom: '24px', lineHeight: 1.6, fontSize: '0.95rem' }}>
               Please note that this application is a <strong> Transport Booking System</strong> built as a <strong>research prototype</strong> for an academic dissertation. It explores solutions to intercity transport terminal congestion in Ghana. It is not a commercial product or a startup pitch. No real payments are processed.
