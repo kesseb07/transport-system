@@ -333,9 +333,9 @@ export default function GateValidationPortal() {
               type="button"
               onClick={isCameraActive ? stopCameraScanner : startCameraScanner}
               style={{
-                background: isCameraActive ? 'rgba(239, 68, 68, 0.2)' : 'linear-gradient(135deg, var(--primary) 0%, #d97706 100%)',
-                color: '#fff',
-                border: isCameraActive ? '1px solid var(--glow-red)' : 'none',
+                background: isCameraActive ? '#dc2626' : 'var(--primary)',
+                color: '#ffffff',
+                border: 'none',
                 padding: '8px 16px',
                 borderRadius: '8px',
                 fontSize: '0.85rem',
@@ -344,6 +344,7 @@ export default function GateValidationPortal() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
+                boxShadow: isCameraActive ? '0 4px 14px rgba(220, 38, 38, 0.4)' : '0 4px 14px var(--primary-glow)',
                 transition: 'all 0.2s'
               }}
             >

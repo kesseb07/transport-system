@@ -694,7 +694,7 @@ export default function CommuterPortal() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button onClick={processPayment} className="btn-primary" style={{ width: '100%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.2)' }}>
+              <button onClick={processPayment} className="btn-primary" style={{ width: '100%', background: '#059669', boxShadow: '0 4px 14px 0 rgba(16, 185, 129, 0.2)' }}>
                 I have completed the payment
               </button>
               <button onClick={() => setShowUSSDModal(false)} className="btn-secondary" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-muted)' }}>

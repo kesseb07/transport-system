@@ -349,7 +349,7 @@ export default function OperatorPanel() {
                   <div style={{ 
                     width: `${(currentSchedule.reservedSeats.length / currentSchedule.totalSeats) * 100}%`,
                     height: '100%',
-                    background: 'linear-gradient(90deg, var(--primary) 0%, var(--accent-gold) 100%)',
+                    background: 'var(--primary)',
                     transition: 'width 0.5s ease-in-out'
                   }} />
                 </div>
