@@ -216,7 +216,7 @@ export default function OperatorPanel() {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
       
       <section style={{ textAlign: 'center', padding: '16px 0' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '8px', background: 'linear-gradient(135deg, #f3f4f6 0%, var(--text-muted) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-main)' }}>
           Operator Dispatch Control Panel
         </h1>
         <p style={{ color: 'var(--text-muted)' }}>

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 /* ==========================================================================
    globals.css — GLOBAL STYLESHEET AND DESIGN SYSTEM
    ==========================================================================
@@ -24,11 +26,6 @@
    the components. The split is pragmatic rather than principled — a larger
    system would move more of the inline styling into named classes here.
    ========================================================================== */
-
-/* Web font loaded from Google Fonts. display=swap renders text immediately in
-   a fallback face while the font downloads, so content stays readable on slow
-   connections instead of appearing blank. */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 /* --------------------------------------------------------------------------
    DEFAULT (DARK) THEME
@@ -349,6 +346,7 @@ input:focus, select:focus {
 
 .header-title {
   font-size: 2.5rem;
+  color: var(--text-main);
 }
 
 /* Below 768px (tablets and phones) every two-column layout becomes a single

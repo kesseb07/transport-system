@@ -358,7 +358,7 @@ export default function CommuterPortal() {
 
       {/* ---- PAGE HEADING ---- */}
       <section style={{ textAlign: 'center', padding: '24px 0' }}>
-        <h1 className="header-title" style={{ fontWeight: 800, marginBottom: '8px', background: 'linear-gradient(135deg, #f3f4f6 0%, var(--text-muted) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 className="header-title" style={{ fontWeight: 800, marginBottom: '8px', color: 'var(--text-main)' }}>
           Avoid The Terminal Queue
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>
