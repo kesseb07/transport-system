@@ -53,6 +53,8 @@ export default function CommuterPortal() {
   // Today's date in YYYY-MM-DD form, used as the minimum selectable travel
   // date so past dates cannot be chosen.
   const todayStr = new Date().toISOString().split('T')[0];
+  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const dayAfterStr = new Date(Date.now() + 172800000).toISOString().split('T')[0];
   // NOTE: the travel date is captured and validated but does not yet filter
   // results — the seeded timetable models a single representative day rather
   // than a multi-date calendar. Extending the schedule table with a date
@@ -401,8 +403,31 @@ export default function CommuterPortal() {
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label htmlFor="travel-date" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Date of Travel</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className={`date-chip ${bookingDate === todayStr ? 'date-chip-selected' : ''}`}
+                  onClick={() => setBookingDate(todayStr)}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className={`date-chip ${bookingDate === tomorrowStr ? 'date-chip-selected' : ''}`}
+                  onClick={() => setBookingDate(tomorrowStr)}
+                >
+                  Tomorrow
+                </button>
+                <button
+                  type="button"
+                  className={`date-chip ${bookingDate === dayAfterStr ? 'date-chip-selected' : ''}`}
+                  onClick={() => setBookingDate(dayAfterStr)}
+                >
+                  +2 Days
+                </button>
+              </div>
               <input 
                 id="travel-date"
                 title="Select Travel Date"

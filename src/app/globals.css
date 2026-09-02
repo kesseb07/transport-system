@@ -306,6 +306,57 @@ option:focus {
   color: #ffffff !important;
 }
 
+/* Date input styling */
+input[type="date"] {
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+input[type="date"]:hover {
+  background: var(--btn-secondary-hover);
+  border-color: var(--border-glass-active);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b30303' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3e%3c/rect%3e%3cline x1='16' y1='2' x2='16' y2='6'%3e%3c/line%3e%3cline x1='8' y1='2' x2='8' y2='6'%3e%3c/line%3e%3cline x1='3' y1='10' x2='21' y2='10'%3e%3c/line%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 18px;
+  transition: var(--transition-smooth);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  background-color: var(--btn-secondary-hover);
+}
+
+/* Quick date selection chips */
+.date-chip {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-glass);
+  background: var(--btn-secondary-bg);
+  color: var(--text-main);
+  transition: var(--transition-smooth);
+}
+
+.date-chip:hover {
+  background: var(--btn-secondary-hover);
+  border-color: var(--border-glass-active);
+}
+
+.date-chip-selected {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
 /* Focus state. The default browser outline is removed, but a visible ring is
    substituted in its place — never remove a focus indicator outright, as
    keyboard and screen-reader users depend on it to track their position. */
