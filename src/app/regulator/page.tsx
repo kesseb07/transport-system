@@ -190,29 +190,54 @@ export default function RegulatorPortal() {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      gap: '24px'
+    }}>
 
       {/* ================= HEADER & OVERSIGHT JURISDICTION ================= */}
-      <section style={{ textAlign: 'center', padding: '8px 0 4px 0' }}>
+      <section style={{ textAlign: 'center', padding: '8px 0 4px 0', minWidth: 0, maxWidth: '100%' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
+          justifyContent: 'center',
           gap: '8px',
-          padding: '4px 12px',
+          padding: '6px 14px',
           background: 'rgba(179, 3, 3, 0.1)',
           border: '1px solid var(--primary-glow)',
           borderRadius: '20px',
-          marginBottom: '10px'
+          marginBottom: '10px',
+          maxWidth: '100%',
+          flexWrap: 'wrap'
         }}>
           <span style={{ fontSize: '0.85rem' }}>🇬🇭</span>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <span style={{
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            color: 'var(--primary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            textAlign: 'center',
+            wordBreak: 'break-word'
+          }}>
             National Transport Authority · Regulatory Oversight
           </span>
         </div>
-        <h1 className="page-header-title">
+        <h1 className="page-header-title" style={{ wordBreak: 'break-word' }}>
           Regulatory Compliance & Revenue Audit
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '720px', margin: '0 auto', lineHeight: 1.5 }}>
+        <p style={{
+          color: 'var(--text-muted)',
+          fontSize: '0.95rem',
+          maxWidth: '720px',
+          margin: '0 auto',
+          lineHeight: 1.5,
+          wordBreak: 'break-word'
+        }}>
           Independent real-time monitoring of intercity transit revenue, digital passenger manifests, and tamper-evident terminal dispatch telemetry.
         </p>
       </section>
@@ -226,16 +251,17 @@ export default function RegulatorPortal() {
           borderLeft: '4px solid var(--accent-gold)',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          minWidth: 0
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Reconciled Taxable Revenue</p>
-            <span style={{ fontSize: '1.2rem', padding: '4px 8px', background: 'var(--accent-gold-glow)', borderRadius: '8px' }}>
+            <span style={{ fontSize: '1.2rem', padding: '4px 8px', background: 'var(--accent-gold-glow)', borderRadius: '8px', flexShrink: 0 }}>
               💳
             </span>
           </div>
           <div>
-            <p style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-gold)', letterSpacing: '-0.02em', margin: 0 }}>
+            <p style={{ fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 800, color: 'var(--accent-gold)', letterSpacing: '-0.02em', margin: 0, wordBreak: 'break-word' }}>
               GHS {revenueSum.toLocaleString()}.00
             </p>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '6px' }}>
@@ -250,16 +276,17 @@ export default function RegulatorPortal() {
           borderLeft: '4px solid var(--primary)',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          minWidth: 0
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Digital Bookings</p>
-            <span style={{ fontSize: '1.2rem', padding: '4px 8px', background: 'var(--primary-glow)', borderRadius: '8px' }}>
+            <span style={{ fontSize: '1.2rem', padding: '4px 8px', background: 'var(--primary-glow)', borderRadius: '8px', flexShrink: 0 }}>
               🎫
             </span>
           </div>
           <div>
-            <p style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em', margin: 0 }}>
+            <p style={{ fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em', margin: 0, wordBreak: 'break-word' }}>
               {bookingsCount}
             </p>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '6px' }}>
@@ -274,16 +301,17 @@ export default function RegulatorPortal() {
           borderLeft: '4px solid var(--glow-green)',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          minWidth: 0
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Physical Gate Boardings</p>
-            <span style={{ fontSize: '1.2rem', padding: '4px 8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>
+            <span style={{ fontSize: '1.2rem', padding: '4px 8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', flexShrink: 0 }}>
               🚪
             </span>
           </div>
           <div>
-            <p style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--glow-green)', letterSpacing: '-0.02em', margin: 0 }}>
+            <p style={{ fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 800, color: 'var(--glow-green)', letterSpacing: '-0.02em', margin: 0, wordBreak: 'break-word' }}>
               {validatedCount}
             </p>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '6px' }}>
@@ -298,7 +326,8 @@ export default function RegulatorPortal() {
           borderLeft: `4px solid ${incidentCount > 0 ? 'var(--glow-red)' : 'var(--accent-teal)'}`,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          minWidth: 0
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Integrity & Security Alerts</p>
@@ -306,18 +335,20 @@ export default function RegulatorPortal() {
               fontSize: '1.2rem',
               padding: '4px 8px',
               background: incidentCount > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(13, 148, 136, 0.15)',
-              borderRadius: '8px'
+              borderRadius: '8px',
+              flexShrink: 0
             }}>
               {incidentCount > 0 ? '⚠️' : '🛡️'}
             </span>
           </div>
           <div>
             <p style={{
-              fontSize: '1.8rem',
+              fontSize: 'clamp(1.4rem, 4vw, 1.8rem)',
               fontWeight: 800,
               color: incidentCount > 0 ? 'var(--glow-red)' : 'var(--accent-teal)',
               letterSpacing: '-0.02em',
-              margin: 0
+              margin: 0,
+              wordBreak: 'break-word'
             }}>
               {incidentCount}
             </p>
@@ -330,13 +361,13 @@ export default function RegulatorPortal() {
       </div>
 
       {/* ================= LICENSED CARRIER REVENUE & MANIFEST RECONCILIATION ================= */}
-      <section className="glass-panel" style={{ padding: '24px' }}>
+      <section className="glass-panel" style={{ padding: '24px', minWidth: 0, maxWidth: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 4px 0' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 4px 0', wordBreak: 'break-word' }}>
               Licensed Carrier Audit & Revenue Reconciliation
             </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, wordBreak: 'break-word' }}>
               Independent verification comparing carrier declared capacity, digital bookings, physical gate boardings, and tax liabilities.
             </p>
           </div>
@@ -345,74 +376,142 @@ export default function RegulatorPortal() {
           </span>
         </div>
 
-        <div className="compliance-table-wrap">
-          <table className="compliance-table">
-            <thead>
-              <tr>
-                <th>Operator</th>
-                <th>Active Fleet</th>
-                <th>Digital Bookings</th>
-                <th>Gate Check-Ins</th>
-                <th>Boarding Rate</th>
-                <th>Reconciled Revenue</th>
-                <th>Audit Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {operatorStats.map((op) => (
-                <tr key={op.id}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{
-                        width: '12px',
-                        height: '12px',
-                        borderRadius: '3px',
-                        background: op.color,
-                        display: 'inline-block'
-                      }} />
-                      <strong style={{ color: 'var(--text-main)' }}>{op.name}</strong>
-                      <span className="badge badge-system" style={{ fontSize: '0.65rem' }}>{op.code}</span>
-                    </div>
-                  </td>
-                  <td>{op.activeBuses} Scheduled Services</td>
-                  <td>
-                    <strong>{op.bookingsCount}</strong> tickets
-                  </td>
-                  <td>
-                    <span style={{ color: 'var(--glow-green)', fontWeight: 600 }}>{op.validatedCount}</span> boarded
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{
-                        width: '80px',
-                        height: '6px',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        borderRadius: '3px',
-                        overflow: 'hidden'
-                      }}>
-                        <div style={{
-                          width: `${op.checkInRate}%`,
-                          height: '100%',
-                          background: op.checkInRate > 50 ? 'var(--glow-green)' : 'var(--accent-gold)'
-                        }} />
-                      </div>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{op.checkInRate}%</span>
-                    </div>
-                  </td>
-                  <td>
-                    <strong style={{ color: 'var(--accent-gold)' }}>
-                      GHS {op.revenue.toLocaleString()}.00
-                    </strong>
-                  </td>
-                  <td>
-                    <span className="badge badge-success">
-                      ✓ Audited & In Order
-                    </span>
-                  </td>
+        {/* Desktop Table View */}
+        <div className="compliance-desktop-view">
+          <div className="compliance-table-wrap">
+            <table className="compliance-table">
+              <thead>
+                <tr>
+                  <th>Operator</th>
+                  <th>Active Fleet</th>
+                  <th>Digital Bookings</th>
+                  <th>Gate Check-Ins</th>
+                  <th>Boarding Rate</th>
+                  <th>Reconciled Revenue</th>
+                  <th>Audit Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {operatorStats.map((op) => (
+                  <tr key={op.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{
+                          width: '12px',
+                          height: '12px',
+                          borderRadius: '3px',
+                          background: op.color,
+                          display: 'inline-block',
+                          flexShrink: 0
+                        }} />
+                        <strong style={{ color: 'var(--text-main)' }}>{op.name}</strong>
+                        <span className="badge badge-system" style={{ fontSize: '0.65rem' }}>{op.code}</span>
+                      </div>
+                    </td>
+                    <td>{op.activeBuses} Scheduled Services</td>
+                    <td>
+                      <strong>{op.bookingsCount}</strong> tickets
+                    </td>
+                    <td>
+                      <span style={{ color: 'var(--glow-green)', fontWeight: 600 }}>{op.validatedCount}</span> boarded
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{
+                          width: '80px',
+                          height: '6px',
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          borderRadius: '3px',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{
+                            width: `${op.checkInRate}%`,
+                            height: '100%',
+                            background: op.checkInRate > 50 ? 'var(--glow-green)' : 'var(--accent-gold)'
+                          }} />
+                        </div>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{op.checkInRate}%</span>
+                      </div>
+                    </td>
+                    <td>
+                      <strong style={{ color: 'var(--accent-gold)' }}>
+                        GHS {op.revenue.toLocaleString()}.00
+                      </strong>
+                    </td>
+                    <td>
+                      <span className="badge badge-success">
+                        ✓ Audited & In Order
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="compliance-mobile-view">
+          {operatorStats.map((op) => (
+            <div key={op.id} className="operator-compliance-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '3px',
+                    background: op.color,
+                    display: 'inline-block',
+                    flexShrink: 0
+                  }} />
+                  <strong style={{ color: 'var(--text-main)', fontSize: '0.95rem' }}>{op.name}</strong>
+                  <span className="badge badge-system" style={{ fontSize: '0.65rem' }}>{op.code}</span>
+                </div>
+                <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
+                  ✓ Audited & In Order
+                </span>
+              </div>
+
+              <div className="operator-metrics-subgrid">
+                <div style={{ background: 'var(--input-bg)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 2px 0' }}>Active Fleet</p>
+                  <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{op.activeBuses} Services</strong>
+                </div>
+                <div style={{ background: 'var(--input-bg)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 2px 0' }}>Digital Bookings</p>
+                  <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{op.bookingsCount} tickets</strong>
+                </div>
+                <div style={{ background: 'var(--input-bg)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 2px 0' }}>Gate Check-Ins</p>
+                  <strong style={{ fontSize: '0.9rem', color: 'var(--glow-green)' }}>{op.validatedCount} boarded</strong>
+                </div>
+                <div style={{ background: 'var(--input-bg)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0 0 2px 0' }}>Reconciled Rev.</p>
+                  <strong style={{ fontSize: '0.9rem', color: 'var(--accent-gold)' }}>GHS {op.revenue.toLocaleString()}.00</strong>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '4px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Boarding Manifest Rate</span>
+                  <span style={{ fontWeight: 600, color: op.checkInRate > 50 ? 'var(--glow-green)' : 'var(--accent-gold)' }}>{op.checkInRate}%</span>
+                </div>
+                <div style={{
+                  width: '100%',
+                  height: '6px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '3px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${op.checkInRate}%`,
+                    height: '100%',
+                    background: op.checkInRate > 50 ? 'var(--glow-green)' : 'var(--accent-gold)'
+                  }} />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -424,44 +523,54 @@ export default function RegulatorPortal() {
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '16px',
-        borderLeft: incidentCount > 0 ? '4px solid var(--glow-red)' : '4px solid var(--glow-green)'
+        borderLeft: incidentCount > 0 ? '4px solid var(--glow-red)' : '4px solid var(--glow-green)',
+        minWidth: 0,
+        maxWidth: '100%'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '280px', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', minWidth: 0, flex: '1 1 280px' }}>
           <div style={{
-            width: '46px',
-            height: '46px',
+            width: '44px',
+            height: '44px',
             borderRadius: '10px',
             background: incidentCount > 0 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '1.4rem'
+            fontSize: '1.4rem',
+            flexShrink: 0
           }}>
             {incidentCount > 0 ? '⚠️' : '🔒'}
           </div>
-          <div>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-main)', wordBreak: 'break-word' }}>
                 {incidentCount > 0 ? 'Cryptographic Hash Chain: Security Events Flagged' : 'Tamper-Evident Hash Chain: Verified & Continuous'}
               </h3>
               <span className={`badge ${incidentCount > 0 ? 'badge-error' : 'badge-success'}`}>
                 {incidentCount > 0 ? `${incidentCount} Flagged Events` : '0 Broken Links'}
               </span>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: 1.4, wordBreak: 'break-word' }}>
               Sequential djb2 HMAC-style hash dependencies enforce non-repudiation. Historical alterations break subsequent digests.
             </p>
             {logs.length > 0 && (
-              <div style={{ marginTop: '6px', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+              <div style={{
+                marginTop: '6px',
+                fontSize: '0.75rem',
+                color: 'var(--text-dim)',
+                wordBreak: 'break-all',
+                overflowWrap: 'anywhere',
+                lineHeight: 1.4
+              }}>
                 <span>Genesis: <code style={{ fontFamily: 'monospace' }}>000000000000...</code></span>
-                <span style={{ margin: '0 8px' }}>→</span>
+                <span style={{ margin: '0 6px' }}>→</span>
                 <span>Latest Head: <code style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{logs[0]?.hash}</code></span>
               </div>
             )}
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
           <button
             type="button"
             onClick={loadData}
@@ -475,19 +584,19 @@ export default function RegulatorPortal() {
       </div>
 
       {/* ================= THE AUDIT LEDGER SECTION ================= */}
-      <section className="glass-panel" style={{ padding: '24px' }}>
+      <section className="glass-panel" style={{ padding: '24px', minWidth: 0, maxWidth: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
-          <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 4px 0' }}>
+          <div style={{ minWidth: 0, flex: '1 1 260px' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 4px 0', wordBreak: 'break-word' }}>
               Independent Event Audit Ledger
             </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, wordBreak: 'break-word' }}>
               Immutable chronological log of ticket bookings, gate verifications, fleet dispatches, and integrity anomalies.
             </p>
           </div>
 
           {/* Search bar */}
-          <div style={{ width: '100%', maxWidth: '320px' }}>
+          <div style={{ width: '100%', maxWidth: '320px', minWidth: 0 }}>
             <input
               type="text"
               placeholder="Search by ticket, actor, or detail..."
@@ -585,15 +694,17 @@ export default function RegulatorPortal() {
                     flexWrap: 'wrap',
                     gap: '8px',
                     paddingTop: '8px',
-                    borderTop: '1px solid var(--border-glass)'
+                    borderTop: '1px solid var(--border-glass)',
+                    minWidth: 0,
+                    maxWidth: '100%'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0, maxWidth: '100%' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
                         Chain Digest:
                       </span>
-                      <code className="hash-pill" title={`Full hash: ${log.hash}`}>
+                      <code className="hash-pill" title={`Full hash: ${log.hash}`} style={{ wordBreak: 'break-all', overflowWrap: 'anywhere' }}>
                         <span>🔗</span>
-                        <span>{log.hash}</span>
+                        <span style={{ wordBreak: 'break-all' }}>{log.hash}</span>
                       </code>
                     </div>
 
@@ -610,7 +721,8 @@ export default function RegulatorPortal() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px',
-                        borderRadius: '4px'
+                        borderRadius: '4px',
+                        flexShrink: 0
                       }}
                     >
                       {copiedHash === log.hash ? '✓ Copied' : '📋 Copy Hash'}

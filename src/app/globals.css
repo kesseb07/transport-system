@@ -499,14 +499,26 @@ input:focus, select:focus {
 /* Regulator 4 indicators grid */
 .regulator-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+  width: 100%;
+  min-width: 0;
 }
 
-/* Operator compliance matrix table */
+/* Operator compliance matrix table & mobile cards */
+.compliance-desktop-view {
+  display: block;
+}
+
+.compliance-mobile-view {
+  display: none;
+}
+
 .compliance-table-wrap {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 8px;
   border: 1px solid var(--border-glass);
 }
@@ -546,6 +558,28 @@ input:focus, select:focus {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.operator-compliance-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.operator-compliance-card:hover {
+  border-color: var(--border-glass-active);
+}
+
+.operator-metrics-subgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 /* Regulator audit log entry card */
 .ledger-card {
   background: var(--bg-card);
@@ -556,6 +590,10 @@ input:focus, select:focus {
   flex-direction: column;
   gap: 10px;
   transition: var(--transition-smooth);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .ledger-card:hover {
@@ -574,11 +612,14 @@ input:focus, select:focus {
   color: var(--text-muted);
   background: var(--input-bg);
   border: 1px solid var(--border-glass);
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   word-break: break-all;
 }
 
@@ -603,14 +644,16 @@ input:focus, select:focus {
 }
 
 /* Breakpoint for tablet / intermediate screens */
+@media (max-width: 1080px) {
+  .regulator-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px;
+  }
+}
+
 @media (max-width: 900px) {
   .operator-layout-grid {
     grid-template-columns: 1fr;
-  }
-  
-  .regulator-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
   }
 }
 
@@ -656,11 +699,23 @@ input:focus, select:focus {
   .glass-panel {
     padding: 16px !important;
   }
+
+  .compliance-desktop-view {
+    display: none !important;
+  }
+
+  .compliance-mobile-view {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+  }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 600px) {
   .regulator-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 12px;
   }
 
