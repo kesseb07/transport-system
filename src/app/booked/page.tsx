@@ -104,13 +104,18 @@ function QRCodeDisplay({ payload, ticketId }: { payload: string; ticketId: strin
           background: 'rgba(255, 255, 255, 0.07)',
           border: '1px solid var(--border-glass)',
           color: copied ? 'var(--glow-green)' : 'var(--accent-gold)',
-          padding: '6px 12px',
-          borderRadius: '4px',
+          padding: '8px 12px',
+          borderRadius: '6px',
           fontSize: '0.75rem',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'center',
           gap: '6px',
+          maxWidth: '100%',
+          whiteSpace: 'normal',
+          textAlign: 'center',
+          wordBreak: 'break-word',
           transition: 'all 0.2s'
         }}
       >
@@ -279,13 +284,13 @@ function TicketContent() {
   };
 
   return (
-    <section className="glass-panel" style={{ padding: '32px', maxWidth: '1000px', margin: '32px auto', textAlign: 'center', border: '1px solid var(--border-glass-active)' }}>
+    <section className="glass-panel" style={{ maxWidth: '1000px', margin: '16px auto', textAlign: 'center', border: '1px solid var(--border-glass-active)' }}>
       <span className="badge badge-success" style={{ marginBottom: '16px' }}>
         Reservation Confirmed
       </span>
       <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '20px' }}>Your Digital Tickets</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+      <div className="booked-tickets-grid">
         {tickets.map(ticket => {
           const route = getRouteDetails(schedule.routeId);
           const operator = getOperatorDetails(schedule.operatorId);

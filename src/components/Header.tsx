@@ -50,18 +50,7 @@ export default function Header() {
   return (
     // position: sticky keeps the navigation visible while the page scrolls,
     // so the stakeholder views remain one click apart at all times.
-    <header style={{
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-      background: 'var(--header-bg)',
-      backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid var(--border-glass)',
-      padding: '16px 24px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    }}>
+    <header className="site-header">
       {/* Brand mark, and the route home from anywhere in the application.
           Logo.tsx draws it as an inline SVG so its lettering picks up the
           current theme colour rather than being baked into an image file. */}

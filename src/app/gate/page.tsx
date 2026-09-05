@@ -311,23 +311,23 @@ export default function GateValidationPortal() {
 
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
       
-      <section style={{ textAlign: 'center', padding: '16px 0' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-main)' }}>
+      <section style={{ textAlign: 'center', padding: '8px 0' }}>
+        <h1 className="page-header-title">
           Gate Validation Scanner Portal
         </h1>
-        <p style={{ color: 'var(--text-muted)' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
           Scan, decrypt, and verify tickets completely offline using local cryptographic key matches
         </p>
       </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
+      <div className="gate-grid">
         
         {/* ================= SCANNER INPUT =================
             Provides both live camera scanning and manual payload input. */}
         <section className="glass-panel" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>Gate Scanner</h2>
             <button
               type="button"
@@ -395,7 +395,7 @@ export default function GateValidationPortal() {
           
           <form onSubmit={handleValidate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
                 <span>Scanned QR Payload String:</span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Auto-populated on camera scan</span>
               </label>
@@ -417,11 +417,11 @@ export default function GateValidationPortal() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button type="button" onClick={loadSimulatedTicket} className="btn-secondary" style={{ flex: 1, fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <button type="button" onClick={loadSimulatedTicket} className="btn-secondary" style={{ flex: '1 1 140px', fontSize: '0.85rem' }}>
                 Load Mock Valid QR
               </button>
-              <button type="submit" className="btn-primary" style={{ flex: 1, fontSize: '0.85rem' }}>
+              <button type="submit" className="btn-primary" style={{ flex: '1 1 140px', fontSize: '0.85rem' }}>
                 Verify Cryptography
               </button>
             </div>
@@ -490,7 +490,9 @@ export default function GateValidationPortal() {
                   padding: '12px',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '8px'
                 }}>
                   <div>
                     <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>{item.passengerName}</p>

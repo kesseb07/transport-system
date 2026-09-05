@@ -251,11 +251,12 @@ export default function MapComponent() {
       
       <div style={{
         position: 'absolute',
-        top: '20px',
-        left: '50px',
+        top: '16px',
+        left: '16px',
+        maxWidth: 'calc(100% - 32px)',
         zIndex: 1000,
         background: 'var(--bg-card)',
-        padding: '16px 24px',
+        padding: '12px 18px',
         borderRadius: '12px',
         boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
         border: '1px solid var(--border-glass)',

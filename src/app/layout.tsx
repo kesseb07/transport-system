@@ -51,7 +51,7 @@ export default function RootLayout({
             wide monitors while remaining fluid on mobile; flex: 1 makes this
             region absorb spare vertical space so the footer stays at the
             bottom even on short pages. */}
-        <main style={{ flex: 1, padding: '24px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+        <main className="app-main-content">
           {children}
         </main>
 

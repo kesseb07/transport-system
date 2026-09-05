@@ -213,18 +213,18 @@ export default function OperatorPanel() {
   const totalRevenue = matchedBookings.reduce((sum, b) => sum + b.amountPaid, 0);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
       
-      <section style={{ textAlign: 'center', padding: '16px 0' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-main)' }}>
+      <section style={{ textAlign: 'center', padding: '8px 0' }}>
+        <h1 className="page-header-title">
           Operator Dispatch Control Panel
         </h1>
-        <p style={{ color: 'var(--text-muted)' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
           Manage terminal fleets, monitor passenger accumulation velocity, and dispatch schedules
         </p>
       </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 2fr)', gap: '24px', alignItems: 'start' }}>
+      <div className="operator-layout-grid">
         
         {/* ================= FLEET LIST =================
             Every bus in the timetable, each showing its operator, current
@@ -278,7 +278,7 @@ export default function OperatorPanel() {
 
               {/* Three headline metrics, read directly from the algorithm's
                   output: inflow rate, projected departure, and congestion. */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+              <div className="operator-metrics-grid">
                 {/* METRIC 1 — inflow rate driving the model. */}
                 <div style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Arrival Velocity</p>
@@ -359,15 +359,15 @@ export default function OperatorPanel() {
               </div>
 
               {/* The two model actions: fill the bucket, or leak it. */}
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <button onClick={addSimulatedBooking} className="btn-secondary" style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <button onClick={addSimulatedBooking} className="btn-secondary" style={{ flex: '1 1 180px' }}>
                   Simulate Ticketing (Fill Bucket)
                 </button>
                 <button 
                   onClick={triggerDispatch} 
                   disabled={currentSchedule.status === 'departed'}
                   className="btn-primary" 
-                  style={{ flex: 1 }}
+                  style={{ flex: '1 1 180px' }}
                 >
                   Dispatch Bus (Leak Bucket)
                 </button>
@@ -382,9 +382,9 @@ export default function OperatorPanel() {
                 still expected. The fare total above it is reconciled
                 automatically from the same records. */}
             <section className="glass-panel" style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Passenger Manifest</h2>
-                <div style={{ textAlign: 'right' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>Passenger Manifest</h2>
+                <div style={{ textAlign: 'left' }}>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Financial Reconciliation</p>
                   <p style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-gold)' }}>
                     Total Fares: GHS {totalRevenue}.00
