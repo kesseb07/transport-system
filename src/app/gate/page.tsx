@@ -40,7 +40,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getBookings, validateBooking, addAuditLog, Booking } from '../../services/database';
+import { getBookings, validateBooking, addBooking, addAuditLog, Booking } from '../../services/database';
 import { verifyOfflineTicket, QRData } from '../../services/algorithms';
 import { Html5Qrcode } from 'html5-qrcode';
 
@@ -104,13 +104,29 @@ export default function GateValidationPortal() {
   const formatCheckInTime = (value?: string): string => {
     if (!value) return '';
     const parsed = new Date(value);
-    return isNaN(parsed.getTime()) ? value : parsed.toLocaleTimeString();
+    return isNaN(parsed.getTime()) ? value : parsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
-  /** Refreshes the check-in list, keeping only tickets already validated. */
+  /** Extracts the numeric timestamp for sorting by validation/scan recency */
+  const getRecencyTime = (b: Booking): number => {
+    if (b.validatedAt) {
+      const t = new Date(b.validatedAt).getTime();
+      if (!isNaN(t)) return t;
+    }
+    if (b.timestamp) {
+      const t = new Date(b.timestamp).getTime();
+      if (!isNaN(t)) return t;
+    }
+    return 0;
+  };
+
+  /** Refreshes the check-in list, keeping only tickets already validated, ordered by recency (most recent scan first). */
   const loadValidated = async () => {
     const list = await getBookings();
-    setOfflineValidatedList(list.filter(b => b.isValidated));
+    const sorted = list
+      .filter(b => b.isValidated)
+      .sort((a, b) => getRecencyTime(b) - getRecencyTime(a));
+    setOfflineValidatedList(sorted);
   };
 
   useEffect(() => {
@@ -175,6 +191,22 @@ export default function GateValidationPortal() {
           systemMessage = `Validated Offline: Successfully checked in ${qrData.passengerName} to Seat ${qrData.seatNumber}.`;
         } else {
           // OUTCOME 1b — VALID, BUT UNKNOWN TO THIS DEVICE (offline sync).
+          const validatedTimeString = new Date().toISOString();
+          const unSyncedBooking: Booking = {
+            id: qrData.ticketId,
+            scheduleId: 'offline-node',
+            passengerName: qrData.passengerName,
+            passengerPhone: 'N/A (Offline)',
+            seatNumber: qrData.seatNumber,
+            momoProvider: 'MTN',
+            momoTransactionId: 'OFFLINE-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+            amountPaid: 0,
+            timestamp: validatedTimeString,
+            qrPayload: trimmedInput,
+            isValidated: true,
+            validatedAt: validatedTimeString
+          };
+          await addBooking(unSyncedBooking);
           systemMessage = `Validated Offline: Signature matches cryptographic secret keys. Passenger verified (un-synced database log created).`;
         }
 
@@ -311,13 +343,20 @@ export default function GateValidationPortal() {
 
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      gap: '24px'
+    }}>
       
-      <section style={{ textAlign: 'center', padding: '8px 0' }}>
-        <h1 className="page-header-title">
+      <section style={{ textAlign: 'center', padding: '8px 0', minWidth: 0, maxWidth: '100%' }}>
+        <h1 className="page-header-title" style={{ wordBreak: 'break-word' }}>
           Gate Validation Scanner Portal
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', wordBreak: 'break-word' }}>
           Scan, decrypt, and verify tickets completely offline using local cryptographic key matches
         </p>
       </section>
@@ -474,29 +513,44 @@ export default function GateValidationPortal() {
             lives on the device while it is offline and reconciles with the
             central database once connectivity returns — the "eventual
             consistency" half of the offline-first design. */}
-        <section className="glass-panel" style={{ padding: '24px' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px' }}>Offline Validation Log</h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-            List of passengers checked in locally at the boarding gate. This log syncs with central operators when communication recovers.
+        <section className="glass-panel" style={{ padding: '24px', minWidth: 0, maxWidth: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0, wordBreak: 'break-word' }}>Offline Validation Log</h2>
+            <span className="badge badge-info" style={{ fontSize: '0.72rem' }}>
+              Ordered by Recency ({offlineValidatedList.length})
+            </span>
+          </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px', wordBreak: 'break-word' }}>
+            List of passengers checked in locally at the boarding gate in order of recency (most recent scan first).
           </p>
 
           {offlineValidatedList.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {offlineValidatedList.map(item => (
+              {offlineValidatedList.map((item, idx) => (
                 <div key={item.id} style={{
-                  background: 'rgba(255, 255, 255, 0.01)',
-                  border: '1px solid var(--border-glass)',
+                  background: idx === 0 ? 'rgba(179, 3, 3, 0.05)' : 'rgba(255, 255, 255, 0.01)',
+                  border: idx === 0 ? '1px solid var(--primary-glow)' : '1px solid var(--border-glass)',
                   borderRadius: '8px',
                   padding: '12px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   flexWrap: 'wrap',
-                  gap: '8px'
+                  gap: '8px',
+                  transition: 'var(--transition-smooth)'
                 }}>
                   <div>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>{item.passengerName}</p>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Ticket: {item.id} | Seat: {item.seatNumber}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <p style={{ fontSize: '0.9rem', fontWeight: 600, margin: 0 }}>{item.passengerName}</p>
+                      {idx === 0 && (
+                        <span className="badge badge-operator" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                          Most Recent
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                      Ticket: {item.id} | Seat: {item.seatNumber}
+                    </p>
                   </div>
                   <span style={{ fontSize: '0.8rem', color: 'var(--glow-green)', fontWeight: 600 }}>
                     Checked In {item.validatedAt ? `@ ${formatCheckInTime(item.validatedAt)}` : ''}
