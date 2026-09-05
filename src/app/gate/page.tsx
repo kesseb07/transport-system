@@ -41,8 +41,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { getBookings, validateBooking, addBooking, addAuditLog, Booking } from '../../services/database';
-import { verifyOfflineTicket, QRData } from '../../services/algorithms';
+import { verifyOfflineTicket, generateOfflineSignature, QRData } from '../../services/algorithms';
 import { Html5Qrcode } from 'html5-qrcode';
+
+export interface ConfirmationModalState {
+  type: 'success' | 'duplicate' | 'invalid';
+  title: string;
+  message: string;
+  ticketDetails?: QRData;
+  verifiedAt?: string;
+}
 
 export default function GateValidationPortal() {
   // Raw scanned/pasted QR payload awaiting verification.
@@ -53,6 +61,13 @@ export default function GateValidationPortal() {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [lastScannedPayload, setLastScannedPayload] = useState<string | null>(null);
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
+  const isScanLockedRef = useRef(false);
+
+  /**
+   * Modal confirmation popup displayed after each scan to prevent accidental
+   * double-scanning and require user confirmation before continuing.
+   */
+  const [confirmationModal, setConfirmationModal] = useState<ConfirmationModalState | null>(null);
 
   /**
    * Outcome of the most recent scan. Null before any scan has been performed.
@@ -145,10 +160,25 @@ export default function GateValidationPortal() {
    * Can be called by manual form submit or directly from the camera scanner.
    */
   const processValidation = async (rawInput: string) => {
+    // If confirmation modal is open or scanner is locked, ignore concurrent scan attempts
+    if (isScanLockedRef.current && confirmationModal !== null) {
+      return;
+    }
+
     const trimmedInput = rawInput.trim();
     if (!trimmedInput) {
       alert('Please paste or scan a ticket code.');
       return;
+    }
+
+    // Immediately engage scan lock and pause camera to prevent rapid auto-rescanning
+    isScanLockedRef.current = true;
+    if (qrScannerRef.current && qrScannerRef.current.isScanning) {
+      try {
+        qrScannerRef.current.pause(true);
+      } catch {
+        // safe to ignore
+      }
     }
 
     try {
@@ -172,9 +202,10 @@ export default function GateValidationPortal() {
           // OUTCOME 2 — DUPLICATE SCAN.
           if (bookings[ticketIdx].isValidated) {
             playBeep(false);
+            const dupMessage = `Ticket ${qrData.ticketId} was already validated at ${formatCheckInTime(bookings[ticketIdx].validatedAt)}. Duplicate scan attempt detected. Passenger entry denied.`;
             setValidationResult({
               success: false,
-              message: `Ticket already verified at ${formatCheckInTime(bookings[ticketIdx].validatedAt)}. Warning: Duplicate scan attempt detected.`,
+              message: dupMessage,
               ticketDetails: qrData
             });
             await addAuditLog(
@@ -182,13 +213,43 @@ export default function GateValidationPortal() {
               'security_duplicate_scan',
               `Warning: Duplicate offline scan attempt detected for Ticket ID ${qrData.ticketId}.`
             );
+            setConfirmationModal({
+              type: 'duplicate',
+              title: 'Duplicate Ticket Detected',
+              message: dupMessage,
+              ticketDetails: qrData,
+              verifiedAt: bookings[ticketIdx].validatedAt
+            });
             return;
           }
 
           // OUTCOME 1 — VALID, FIRST USE.
           const validatedTimeString = new Date().toISOString();
           await validateBooking(qrData.ticketId, validatedTimeString);
-          systemMessage = `Validated Offline: Successfully checked in ${qrData.passengerName} to Seat ${qrData.seatNumber}.`;
+          systemMessage = `Seat ${qrData.seatNumber} verified for ${qrData.passengerName} (${qrData.busNumber}).`;
+
+          playBeep(true);
+          setValidationResult({
+            success: true,
+            message: systemMessage,
+            ticketDetails: qrData
+          });
+
+          await addAuditLog(
+            'operator',
+            'ticket_verification_offline',
+            `Gate validated Ticket ID ${qrData.ticketId} offline. Passenger: ${qrData.passengerName}, Seat: ${qrData.seatNumber}.`
+          );
+          await loadValidated();
+
+          setConfirmationModal({
+            type: 'success',
+            title: 'Ticket Successfully Verified',
+            message: `${systemMessage} Gate boarding permitted.`,
+            ticketDetails: qrData,
+            verifiedAt: validatedTimeString
+          });
+          return;
         } else {
           // OUTCOME 1b — VALID, BUT UNKNOWN TO THIS DEVICE (offline sync).
           const validatedTimeString = new Date().toISOString();
@@ -207,29 +268,39 @@ export default function GateValidationPortal() {
             validatedAt: validatedTimeString
           };
           await addBooking(unSyncedBooking);
-          systemMessage = `Validated Offline: Signature matches cryptographic secret keys. Passenger verified (un-synced database log created).`;
+          systemMessage = `Offline Cryptographic Signature Match: Seat ${qrData.seatNumber} verified for ${qrData.passengerName}.`;
+
+          playBeep(true);
+          setValidationResult({
+            success: true,
+            message: systemMessage,
+            ticketDetails: qrData
+          });
+
+          await addAuditLog(
+            'operator',
+            'ticket_verification_offline',
+            `Gate validated Ticket ID ${qrData.ticketId} offline. Passenger: ${qrData.passengerName}, Seat: ${qrData.seatNumber}.`
+          );
+          await loadValidated();
+
+          setConfirmationModal({
+            type: 'success',
+            title: 'Ticket Successfully Verified',
+            message: `${systemMessage} Gate boarding permitted.`,
+            ticketDetails: qrData,
+            verifiedAt: validatedTimeString
+          });
+          return;
         }
-
-        playBeep(true);
-        setValidationResult({
-          success: true,
-          message: systemMessage,
-          ticketDetails: qrData
-        });
-
-        await addAuditLog(
-          'operator',
-          'ticket_verification_offline',
-          `Gate validated Ticket ID ${qrData.ticketId} offline. Passenger: ${qrData.passengerName}, Seat: ${qrData.seatNumber}.`
-        );
-        await loadValidated();
 
       } else {
         // OUTCOME 3 — SIGNATURE MISMATCH (forged or altered ticket).
         playBeep(false);
+        const mismatchMsg = 'Verification Failed: Cryptographic signature mismatch. Potential forged or altered ticket payload. Passenger entry denied.';
         setValidationResult({
           success: false,
-          message: 'Verification Failed: Cryptographic signature mismatch. Potential forged or altered ticket payload.',
+          message: mismatchMsg,
           ticketDetails: qrData
         });
 
@@ -238,15 +309,51 @@ export default function GateValidationPortal() {
           'security_signature_mismatch',
           `Security Alert: Ticket signature mismatch detected on validation input: ${trimmedInput.slice(0, 100)}...`
         );
+
+        setConfirmationModal({
+          type: 'invalid',
+          title: 'Security Alert: Signature Mismatch',
+          message: mismatchMsg,
+          ticketDetails: qrData
+        });
+        return;
       }
     } catch {
       // OUTCOME 4 — MALFORMED PAYLOAD.
       playBeep(false);
+      const malformedMsg = 'Invalid Scan Payload: Input does not match the transit ticket structural template. Passenger entry denied.';
       setValidationResult({
         success: false,
-        message: 'Invalid Scan Payload: Input does not match the transit ticket structural template.'
+        message: malformedMsg
+      });
+
+      setConfirmationModal({
+        type: 'invalid',
+        title: 'Invalid Ticket Format',
+        message: malformedMsg
       });
     }
+  };
+
+  /**
+   * Closes confirmation modal and safely releases scanner lock so the next passenger can be scanned.
+   */
+  const handleCloseConfirmation = () => {
+    setConfirmationModal(null);
+    setTicketInput('');
+    setLastScannedPayload(null);
+
+    // Brief delay before unpausing scanner to allow removing ticket from camera viewport
+    setTimeout(() => {
+      isScanLockedRef.current = false;
+      if (qrScannerRef.current && qrScannerRef.current.isScanning) {
+        try {
+          qrScannerRef.current.resume();
+        } catch {
+          // safe to ignore
+        }
+      }
+    }, 300);
   };
 
   /** Form submit wrapper */
@@ -268,6 +375,9 @@ export default function GateValidationPortal() {
         }
 
         const qrCodeSuccessCallback = async (decodedText: string) => {
+          // If scanner is locked by active verification or modal, block scan
+          if (isScanLockedRef.current) return;
+
           // Prevent rapid double-triggering on the exact same scan frame
           if (decodedText === lastScannedPayload) return;
           setLastScannedPayload(decodedText);
@@ -275,9 +385,6 @@ export default function GateValidationPortal() {
 
           // Automatically process verification
           await processValidation(decodedText);
-
-          // Auto-clear last scanned latch after 2.5 seconds to allow subsequent scans
-          setTimeout(() => setLastScannedPayload(null), 2500);
         };
 
         const config = {
@@ -325,18 +432,24 @@ export default function GateValidationPortal() {
     setTicketInput('');
     setValidationResult(null);
     setLastScannedPayload(null);
+    isScanLockedRef.current = false;
   };
 
   /**
-   * Loads a sample ticket for demonstration purposes.
+   * Loads a sample valid ticket with cryptographic HMAC-SHA256 signature for demonstration.
    */
   const loadSimulatedTicket = () => {
-    const validMockTicket = {
-      ticketId: "TKT-3829-GH",
-      passengerName: "Kofi Mensah",
-      seatNumber: 14,
-      busNumber: "VIP-843-26",
-      signature: "1B3F9A7D"
+    const ticketId = "TKT-3829-GH";
+    const passengerName = "Kofi Mensah";
+    const seatNumber = 14;
+    const busNumber = "VIP-843-26";
+    const signature = generateOfflineSignature(ticketId, passengerName, seatNumber, busNumber);
+    const validMockTicket: QRData = {
+      ticketId,
+      passengerName,
+      seatNumber,
+      busNumber,
+      signature
     };
     setTicketInput(JSON.stringify(validMockTicket, null, 2));
   };
@@ -566,6 +679,199 @@ export default function GateValidationPortal() {
         </section>
 
       </div>
+
+      {/* ================= SCAN CONFIRMATION POPUP MODAL =================
+          Pops up immediately upon verification to display validation status
+          (Verified, Duplicate, or Invalid) and prevents automatic re-verification
+          until the operator explicitly reviews the outcome and clicks "Okay". */}
+      {confirmationModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#111827',
+            border: confirmationModal.type === 'success' 
+              ? '2px solid #10b981' 
+              : confirmationModal.type === 'duplicate' 
+                ? '2px solid #f59e0b' 
+                : '2px solid #b30303',
+            borderRadius: '16px',
+            maxWidth: '460px',
+            width: '100%',
+            padding: '24px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            {/* Status Icon */}
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              margin: '0 auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              fontWeight: 700,
+              background: confirmationModal.type === 'success'
+                ? 'rgba(16, 185, 129, 0.15)'
+                : confirmationModal.type === 'duplicate'
+                  ? 'rgba(245, 158, 11, 0.15)'
+                  : 'rgba(179, 3, 3, 0.15)',
+              color: confirmationModal.type === 'success'
+                ? '#10b981'
+                : confirmationModal.type === 'duplicate'
+                  ? '#f59e0b'
+                  : '#ef4444',
+              border: `2px solid ${
+                confirmationModal.type === 'success'
+                  ? '#10b981'
+                  : confirmationModal.type === 'duplicate'
+                    ? '#f59e0b'
+                    : '#b30303'
+              }`
+            }}>
+              {confirmationModal.type === 'success' ? '✓' : confirmationModal.type === 'duplicate' ? '⚠️' : '✕'}
+            </div>
+
+            {/* Title & Status Badge */}
+            <div>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                marginBottom: '8px',
+                background: confirmationModal.type === 'success'
+                  ? 'rgba(16, 185, 129, 0.2)'
+                  : confirmationModal.type === 'duplicate'
+                    ? 'rgba(245, 158, 11, 0.2)'
+                    : 'rgba(239, 68, 68, 0.2)',
+                color: confirmationModal.type === 'success'
+                  ? '#34d399'
+                  : confirmationModal.type === 'duplicate'
+                    ? '#fbbf24'
+                    : '#f87171',
+                border: `1px solid ${
+                  confirmationModal.type === 'success'
+                    ? '#10b981'
+                    : confirmationModal.type === 'duplicate'
+                      ? '#f59e0b'
+                      : '#ef4444'
+                }`
+              }}>
+                {confirmationModal.type === 'success'
+                  ? 'PASSENGER VERIFIED • ADMITTED'
+                  : confirmationModal.type === 'duplicate'
+                    ? 'WARNING • DUPLICATE TICKET'
+                    : 'SECURITY ALERT • ENTRY DENIED'}
+              </span>
+              <h3 style={{
+                fontSize: '1.25rem',
+                fontWeight: 700,
+                color: '#ffffff',
+                margin: '4px 0 0 0'
+              }}>
+                {confirmationModal.title}
+              </h3>
+            </div>
+
+            {/* Explanatory Message */}
+            <p style={{
+              fontSize: '0.9rem',
+              color: '#d1d5db',
+              lineHeight: 1.5,
+              margin: 0
+            }}>
+              {confirmationModal.message}
+            </p>
+
+            {/* Decoded Ticket Details (when present) */}
+            {confirmationModal.ticketDetails && (
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.45)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '0.85rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                gap: '8px 12px'
+              }}>
+                <div>
+                  <span style={{ fontSize: '0.72rem', color: '#9ca3af', display: 'block' }}>Passenger</span>
+                  <strong style={{ color: '#ffffff', fontSize: '0.9rem' }}>{confirmationModal.ticketDetails.passengerName}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.72rem', color: '#9ca3af', display: 'block' }}>Seat Assigned</span>
+                  <strong style={{ color: confirmationModal.type === 'success' ? '#10b981' : '#f59e0b', fontSize: '0.9rem' }}>
+                    Seat {confirmationModal.ticketDetails.seatNumber}
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.72rem', color: '#9ca3af', display: 'block' }}>Ticket ID</span>
+                  <span style={{ fontFamily: 'monospace', color: '#e5e7eb' }}>{confirmationModal.ticketDetails.ticketId}</span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.72rem', color: '#9ca3af', display: 'block' }}>Bus Code</span>
+                  <span style={{ color: '#e5e7eb' }}>{confirmationModal.ticketDetails.busNumber}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Confirmation Action Button */}
+            <button
+              type="button"
+              onClick={handleCloseConfirmation}
+              autoFocus
+              className="btn-primary"
+              style={{
+                width: '100%',
+                padding: '12px 20px',
+                fontSize: '1rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                background: confirmationModal.type === 'success'
+                  ? '#059669'
+                  : confirmationModal.type === 'duplicate'
+                    ? '#d97706'
+                    : 'var(--primary)',
+                color: '#ffffff',
+                border: 'none',
+                boxShadow: confirmationModal.type === 'success'
+                  ? '0 4px 14px rgba(16, 185, 129, 0.3)'
+                  : confirmationModal.type === 'duplicate'
+                    ? '0 4px 14px rgba(245, 158, 11, 0.3)'
+                    : '0 4px 14px var(--primary-glow)',
+                transition: 'all 0.2s'
+              }}
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
